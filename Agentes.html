@@ -8,10 +8,6 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-<!-- FIREBASE SDKs (Compat v9) -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-
 <style>
 body {
   font-family: 'Poppins', sans-serif;
@@ -96,7 +92,7 @@ body {
         </div>
         <div>
           <h2 class="text-xs sm:text-sm font-black gold-gradient-text tracking-wide uppercase" id="agent-header-name">AGENTE</h2>
-          <span class="text-[9px] sm:text-[10px] text-slate-400 font-medium block">Sincronizado con Firebase ☁️</span>
+          <span class="text-[9px] sm:text-[10px] text-slate-400 font-medium block">Sincronizado con Firebase (romiraspa) ☁️</span>
         </div>
       </div>
       <div class="flex items-center gap-2">
@@ -279,383 +275,388 @@ body {
 
 </div>
 
-<script>
-// CONFIGURACIÓN DE FIREBASE
-const firebaseConfig = {
-  apiKey: "AIzaSyBVYB9BRSMPR4S6QpogWGnSSqwFCI1-bh8",
-  authDomain: "raspaygana-fdacb.firebaseapp.com",
-  projectId: "raspaygana-fdacb",
-  storageBucket: "raspaygana-fdacb.firebasestorage.app",
-  messagingSenderId: "851746213050",
-  appId: "1:851746213050:web:f27c58c79af81caedb4683"
-};
+<!-- SCRIPT DE FIREBASE MODULAR (v10) CON TUS CREDENCIALES EXACTAS -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-
-let usersDB = {};
-let withdrawalsDB = [];
-let currentAgent = null;
-
-// CARGAR DESDE FIREBASE
-async function initDB() {
-  try {
-    const docRef = db.collection("sistema").doc("datos_globales");
-    const docSnap = await docRef.get();
-
-    if (docSnap.exists) {
-      const data = docSnap.data();
-      usersDB = data.users || {};
-      withdrawalsDB = data.withdrawals || [];
-    }
-  } catch (e) {
-    console.error("Error al conectar con Firebase:", e);
-    showToast("Error de conexión con la nube", "error");
-  }
-}
-
-// GUARDAR EN FIREBASE
-async function saveToCloud() {
-  try {
-    await db.collection("sistema").doc("datos_globales").set({
-      users: usersDB,
-      withdrawals: withdrawalsDB
-    }, { merge: true });
-  } catch (e) {
-    console.error("Error al guardar en Firebase:", e);
-    showToast("Error al sincronizar con la nube", "error");
-  }
-}
-
-// LOGIN DE AGENTE
-async function handleAgentLogin(e) {
-  e.preventDefault();
-  await initDB();
-  
-  const username = document.getElementById('agent-user').value.trim().toLowerCase();
-  const pass = document.getElementById('agent-pass').value;
-
-  if (usersDB[username] && usersDB[username].role === 'agent' && usersDB[username].password === pass) {
-    currentAgent = username;
-    sessionStorage.setItem('agent_logged', currentAgent);
-    showToast('¡Bienvenido Agente ' + usersDB[username].name + '!');
-    showDashboard();
-  } else {
-    showToast('Usuario o contraseña de agente incorrectos', 'error');
-  }
-}
-
-function agentLogout() {
-  currentAgent = null;
-  sessionStorage.removeItem('agent_logged');
-  document.getElementById('view-dashboard').classList.add('hidden');
-  document.getElementById('view-login').classList.remove('hidden');
-}
-
-async function checkAgentAuth() {
-  await initDB();
-  const logged = sessionStorage.getItem('agent_logged');
-  if (logged && usersDB[logged] && usersDB[logged].role === 'agent') {
-    currentAgent = logged;
-    showDashboard();
-  }
-}
-
-function showDashboard() {
-  document.getElementById('view-login').classList.add('hidden');
-  document.getElementById('view-dashboard').classList.remove('hidden');
-  document.getElementById('view-dashboard').classList.add('flex');
-  document.getElementById('agent-header-name').innerText = usersDB[currentAgent].name;
-  renderClients();
-  populateClientSelects();
-  renderAgentHistory();
-}
-
-// CAMBIO DE PESTAÑAS
-function switchTab(tab) {
-  const sections = ['create', 'clients', 'withdrawals', 'history', 'tickets'];
-  sections.forEach(s => {
-    const secEl = document.getElementById(`section-${s}`);
-    const tabEl = document.getElementById(`tab-${s}`);
-    if (secEl) secEl.classList.add('hidden');
-    if (tabEl) tabEl.className = "py-2.5 px-3.5 sm:px-4 rounded-xl text-[11px] sm:text-xs font-extrabold text-slate-400 hover:text-white bg-slate-900/50 border border-slate-800/50 transition flex items-center justify-center gap-2 shrink-0";
-  });
-
-  const activeSec = document.getElementById(`section-${tab}`);
-  const activeTab = document.getElementById(`tab-${tab}`);
-  if (activeSec) activeSec.classList.remove('hidden');
-  if (activeTab) activeTab.className = "py-2.5 px-3.5 sm:px-4 rounded-xl text-[11px] sm:text-xs font-extrabold bg-purple-500 text-slate-950 transition flex items-center justify-center gap-2 shrink-0 shadow-lg shadow-purple-500/10";
-
-  if (tab === 'clients') renderClients();
-  if (tab === 'withdrawals' || tab === 'tickets') populateClientSelects();
-  if (tab === 'history') renderAgentHistory();
-}
-
-function getMyClients() {
-  let myClients = {};
-  Object.keys(usersDB).forEach(k => {
-    const u = usersDB[k];
-    if (u.role === 'client' && u.createdBy === currentAgent) {
-      myClients[k] = u;
-    }
-  });
-  return myClients;
-}
-
-// 1. CREAR JUGADOR
-async function handleCreateClient(e) {
-  e.preventDefault();
-  await initDB();
-
-  const name = document.getElementById('c-name').value.trim();
-  const username = document.getElementById('c-username').value.trim().toLowerCase();
-  const pass = document.getElementById('c-pass').value;
-
-  if (usersDB[username]) {
-    showToast('El nombre de usuario ya está en uso', 'error');
-    return;
-  }
-
-  const userId = 'HLN-' + Math.floor(10000 + Math.random() * 90000);
-  const currentDate = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-  usersDB[username] = {
-    id: userId,
-    name: name,
-    username: username,
-    password: pass,
-    role: 'client',
-    createdBy: currentAgent,
-    balance: 0,
-    tickets: 0,
-    createdAt: currentDate,
-    history: []
+  // CONFIGURACIÓN DE FIREBASE (romiraspa)
+  const firebaseConfig = {
+    apiKey: "AIzaSyDozXJ_MIRZvW9R_V3Q6JPP6P-pFQBzjXo",
+    authDomain: "romiraspa.firebaseapp.com",
+    projectId: "romiraspa",
+    storageBucket: "romiraspa.firebasestorage.app",
+    messagingSenderId: "193104758892",
+    appId: "1:193104758892:web:4d0d3491c4ccf83616f049"
   };
 
-  await saveToCloud();
-  showToast(`Jugador ${name} registrado en la nube`);
-  e.target.reset();
-  renderClients();
-  populateClientSelects();
-}
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-// 2. VER CLIENTES
-function renderClients() {
-  const tbody = document.getElementById('table-clients-body');
-  const cardsContainer = document.getElementById('cards-clients-body');
-  if (!tbody || !cardsContainer) return;
+  let usersDB = {};
+  let withdrawalsDB = [];
+  let currentAgent = null;
 
-  const clients = getMyClients();
-  const keys = Object.keys(clients);
+  // CARGAR DESDE FIREBASE
+  async function initDB() {
+    try {
+      const docRef = doc(db, "sistema", "datos_globales");
+      const docSnap = await getDoc(docRef);
 
-  if (keys.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">No tienes clientes registrados todavía.</td></tr>`;
-    cardsContainer.innerHTML = `<div class="text-center text-slate-500 text-xs py-4 col-span-full">No tienes clientes registrados todavía.</div>`;
-    return;
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        usersDB = data.users || {};
+        withdrawalsDB = data.withdrawals || [];
+      }
+    } catch (e) {
+      console.error("Error al conectar con Firebase:", e);
+      showToast("Error de conexión con la nube", "error");
+    }
   }
 
-  tbody.innerHTML = keys.map(k => {
-    const u = clients[k];
-    return `
-      <tr class="hover:bg-slate-900/40 transition">
-        <td class="p-3 font-bold text-white">${u.name}<br><span class="text-[10px] text-purple-400 font-mono">${u.id}</span></td>
-        <td class="p-3 text-slate-300 font-mono">@${u.username}</td>
-        <td class="p-3 font-black text-amber-400">${(u.balance || 0).toLocaleString('es-PY')} GS</td>
-        <td class="p-3 font-black text-purple-300">${u.tickets || 0} Cartones</td>
-        <td class="p-3 text-center">
-          <button onclick="quickAddTickets('${k}')" class="bg-purple-500/10 hover:bg-purple-500 text-purple-400 hover:text-slate-950 px-3 py-1.5 rounded-lg text-[10px] font-extrabold border border-purple-500/30 transition">Cargar Cartón</button>
-        </td>
-      </tr>
-    `;
-  }).join('');
+  // GUARDAR EN FIREBASE
+  async function saveToCloud() {
+    try {
+      const docRef = doc(db, "sistema", "datos_globales");
+      await setDoc(docRef, {
+        users: usersDB,
+        withdrawals: withdrawalsDB
+      }, { merge: true });
+    } catch (e) {
+      console.error("Error al guardar en Firebase:", e);
+      showToast("Error al sincronizar con la nube", "error");
+    }
+  }
 
-  cardsContainer.innerHTML = keys.map(k => {
-    const u = clients[k];
-    return `
-      <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex flex-col gap-2.5 shadow-sm">
-        <div class="flex items-center justify-between">
-          <div>
-            <div class="text-xs font-black text-white">${u.name}</div>
-            <div class="text-[10px] text-purple-400 font-mono">${u.id} • @${u.username}</div>
+  // LOGIN DE AGENTE
+  window.handleAgentLogin = async function(e) {
+    e.preventDefault();
+    await initDB();
+    
+    const username = document.getElementById('agent-user').value.trim().toLowerCase();
+    const pass = document.getElementById('agent-pass').value;
+
+    if (usersDB[username] && usersDB[username].role === 'agent' && usersDB[username].password === pass) {
+      currentAgent = username;
+      sessionStorage.setItem('agent_logged', currentAgent);
+      showToast('¡Bienvenido Agente ' + usersDB[username].name + '!');
+      showDashboard();
+    } else {
+      showToast('Usuario o contraseña de agente incorrectos', 'error');
+    }
+  };
+
+  window.agentLogout = function() {
+    currentAgent = null;
+    sessionStorage.removeItem('agent_logged');
+    document.getElementById('view-dashboard').classList.add('hidden');
+    document.getElementById('view-login').classList.remove('hidden');
+  };
+
+  async function checkAgentAuth() {
+    await initDB();
+    const logged = sessionStorage.getItem('agent_logged');
+    if (logged && usersDB[logged] && usersDB[logged].role === 'agent') {
+      currentAgent = logged;
+      showDashboard();
+    }
+  }
+
+  function showDashboard() {
+    document.getElementById('view-login').classList.add('hidden');
+    document.getElementById('view-dashboard').classList.remove('hidden');
+    document.getElementById('view-dashboard').classList.add('flex');
+    document.getElementById('agent-header-name').innerText = usersDB[currentAgent].name;
+    renderClients();
+    populateClientSelects();
+    renderAgentHistory();
+  }
+
+  // CAMBIO DE PESTAÑAS
+  window.switchTab = function(tab) {
+    const sections = ['create', 'clients', 'withdrawals', 'history', 'tickets'];
+    sections.forEach(s => {
+      const secEl = document.getElementById(`section-${s}`);
+      const tabEl = document.getElementById(`tab-${s}`);
+      if (secEl) secEl.classList.add('hidden');
+      if (tabEl) tabEl.className = "py-2.5 px-3.5 sm:px-4 rounded-xl text-[11px] sm:text-xs font-extrabold text-slate-400 hover:text-white bg-slate-900/50 border border-slate-800/50 transition flex items-center justify-center gap-2 shrink-0";
+    });
+
+    const activeSec = document.getElementById(`section-${tab}`);
+    const activeTab = document.getElementById(`tab-${tab}`);
+    if (activeSec) activeSec.classList.remove('hidden');
+    if (activeTab) activeTab.className = "py-2.5 px-3.5 sm:px-4 rounded-xl text-[11px] sm:text-xs font-extrabold bg-purple-500 text-slate-950 transition flex items-center justify-center gap-2 shrink-0 shadow-lg shadow-purple-500/10";
+
+    if (tab === 'clients') renderClients();
+    if (tab === 'withdrawals' || tab === 'tickets') populateClientSelects();
+    if (tab === 'history') renderAgentHistory();
+  };
+
+  function getMyClients() {
+    let myClients = {};
+    Object.keys(usersDB).forEach(k => {
+      const u = usersDB[k];
+      if (u.role === 'client' && u.createdBy === currentAgent) {
+        myClients[k] = u;
+      }
+    });
+    return myClients;
+  }
+
+  // 1. CREAR JUGADOR
+  window.handleCreateClient = async function(e) {
+    e.preventDefault();
+    await initDB();
+
+    const name = document.getElementById('c-name').value.trim();
+    const username = document.getElementById('c-username').value.trim().toLowerCase();
+    const pass = document.getElementById('c-pass').value;
+
+    if (usersDB[username]) {
+      showToast('El nombre de usuario ya está en uso', 'error');
+      return;
+    }
+
+    const userId = 'HLN-' + Math.floor(10000 + Math.random() * 90000);
+    const currentDate = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    usersDB[username] = {
+      id: userId,
+      name: name,
+      username: username,
+      password: pass,
+      role: 'client',
+      createdBy: currentAgent,
+      balance: 0,
+      tickets: 0,
+      createdAt: currentDate,
+      history: []
+    };
+
+    await saveToCloud();
+    showToast(`Jugador ${name} registrado en la nube`);
+    e.target.reset();
+    renderClients();
+    populateClientSelects();
+  };
+
+  // 2. VER CLIENTES
+  function renderClients() {
+    const tbody = document.getElementById('table-clients-body');
+    const cardsContainer = document.getElementById('cards-clients-body');
+    if (!tbody || !cardsContainer) return;
+
+    const clients = getMyClients();
+    const keys = Object.keys(clients);
+
+    if (keys.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">No tienes clientes registrados todavía.</td></tr>`;
+      cardsContainer.innerHTML = `<div class="text-center text-slate-500 text-xs py-4 col-span-full">No tienes clientes registrados todavía.</div>`;
+      return;
+    }
+
+    tbody.innerHTML = keys.map(k => {
+      const u = clients[k];
+      return `
+        <tr class="hover:bg-slate-900/40 transition">
+          <td class="p-3 font-bold text-white">${u.name}<br><span class="text-[10px] text-purple-400 font-mono">${u.id}</span></td>
+          <td class="p-3 text-slate-300 font-mono">@${u.username}</td>
+          <td class="p-3 font-black text-amber-400">${(u.balance || 0).toLocaleString('es-PY')} GS</td>
+          <td class="p-3 font-black text-purple-300">${u.tickets || 0} Cartones</td>
+          <td class="p-3 text-center">
+            <button onclick="quickAddTickets('${k}')" class="bg-purple-500/10 hover:bg-purple-500 text-purple-400 hover:text-slate-950 px-3 py-1.5 rounded-lg text-[10px] font-extrabold border border-purple-500/30 transition">Cargar Cartón</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    cardsContainer.innerHTML = keys.map(k => {
+      const u = clients[k];
+      return `
+        <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex flex-col gap-2.5 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-xs font-black text-white">${u.name}</div>
+              <div class="text-[10px] text-purple-400 font-mono">${u.id} • @${u.username}</div>
+            </div>
+          </div>
+          <div class="flex justify-between items-center text-xs bg-slate-900/60 p-2 rounded-lg border border-slate-800/60">
+            <div><span class="text-[10px] text-slate-400 block">Saldo</span><span class="font-black text-amber-400">${(u.balance || 0).toLocaleString('es-PY')} GS</span></div>
+            <div class="text-right"><span class="text-[10px] text-slate-400 block">Cartones</span><span class="font-black text-purple-300">${u.tickets || 0}</span></div>
+          </div>
+          <div class="pt-0.5">
+            <button onclick="quickAddTickets('${k}')" class="w-full bg-purple-500/10 hover:bg-purple-500 text-purple-400 hover:text-slate-950 py-1.5 rounded-lg text-[10px] font-extrabold border border-purple-500/30 transition text-center">Cargar Cartón</button>
           </div>
         </div>
-        <div class="flex justify-between items-center text-xs bg-slate-900/60 p-2 rounded-lg border border-slate-800/60">
-          <div><span class="text-[10px] text-slate-400 block">Saldo</span><span class="font-black text-amber-400">${(u.balance || 0).toLocaleString('es-PY')} GS</span></div>
-          <div class="text-right"><span class="text-[10px] text-slate-400 block">Cartones</span><span class="font-black text-purple-300">${u.tickets || 0}</span></div>
-        </div>
-        <div class="pt-0.5">
-          <button onclick="quickAddTickets('${k}')" class="w-full bg-purple-500/10 hover:bg-purple-500 text-purple-400 hover:text-slate-950 py-1.5 rounded-lg text-[10px] font-extrabold border border-purple-500/30 transition text-center">Cargar Cartón</button>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-function populateClientSelects() {
-  const clients = getMyClients();
-  const keys = Object.keys(clients);
-  const selectW = document.getElementById('w-client-username');
-  const selectT = document.getElementById('t-client-username');
-
-  const optionsHtml = keys.length === 0 
-    ? '<option value="">No hay clientes registrados</option>'
-    : '<option value="">-- Selecciona un cliente --</option>' + keys.map(k => `<option value="${k}">${clients[k].name} (@${clients[k].username}) - Saldo: ${(clients[k].balance||0).toLocaleString('es-PY')} GS</option>`).join('');
-
-  if (selectW) selectW.innerHTML = optionsHtml;
-  if (selectT) selectT.innerHTML = optionsHtml;
-}
-
-function checkClientBalance(username) {
-  const infoEl = document.getElementById('client-balance-info');
-  if (!username || !usersDB[username]) {
-    infoEl.innerText = "Saldo disponible: 0 GS";
-    infoEl.className = "text-[10px] text-slate-400 block font-bold mt-1";
-    return;
-  }
-  const bal = usersDB[username].balance || 0;
-  infoEl.innerText = `Saldo disponible: ${bal.toLocaleString('es-PY')} GS`;
-  infoEl.className = bal > 0 ? "text-[10px] text-emerald-400 block font-bold mt-1" : "text-[10px] text-red-400 block font-bold mt-1";
-}
-
-// 3. RETIRAR PREMIO
-async function handleAgentWithdrawal(e) {
-  e.preventDefault();
-  await initDB();
-
-  const username = document.getElementById('w-client-username').value;
-  const amountInput = document.getElementById('w-amount').value;
-  const details = document.getElementById('w-details').value.trim();
-
-  if (!username || !usersDB[username]) {
-    showToast('Selecciona un cliente válido', 'error');
-    return;
+      `;
+    }).join('');
   }
 
-  const client = usersDB[username];
-  const amount = parseInt(amountInput);
-  const currentBalance = client.balance || 0;
+  function populateClientSelects() {
+    const clients = getMyClients();
+    const keys = Object.keys(clients);
+    const selectW = document.getElementById('w-client-username');
+    const selectT = document.getElementById('t-client-username');
 
-  if (currentBalance <= 0) {
-    showToast(`El cliente ${client.name} no tiene saldo disponible (0 GS)`, 'error');
-    return;
+    const optionsHtml = keys.length === 0 
+      ? '<option value="">No hay clientes registrados</option>'
+      : '<option value="">-- Selecciona un cliente --</option>' + keys.map(k => `<option value="${k}">${clients[k].name} (@${clients[k].username}) - Saldo: ${(clients[k].balance||0).toLocaleString('es-PY')} GS</option>`).join('');
+
+    if (selectW) selectW.innerHTML = optionsHtml;
+    if (selectT) selectT.innerHTML = optionsHtml;
   }
 
-  if (amount > currentBalance) {
-    showToast(`Saldo insuficiente. El cliente solo posee ${currentBalance.toLocaleString('es-PY')} GS`, 'error');
-    return;
-  }
+  window.checkClientBalance = function(username) {
+    const infoEl = document.getElementById('client-balance-info');
+    if (!username || !usersDB[username]) {
+      infoEl.innerText = "Saldo disponible: 0 GS";
+      infoEl.className = "text-[10px] text-slate-400 block font-bold mt-1";
+      return;
+    }
+    const bal = usersDB[username].balance || 0;
+    infoEl.innerText = `Saldo disponible: ${bal.toLocaleString('es-PY')} GS`;
+    infoEl.className = bal > 0 ? "text-[10px] text-emerald-400 block font-bold mt-1" : "text-[10px] text-red-400 block font-bold mt-1";
+  };
 
-  usersDB[username].balance -= amount;
-  
-  withdrawalsDB.unshift({
-    agent: currentAgent,
-    username: client.name + ' (@' + client.username + ')',
-    amount: amount,
-    details: details,
-    status: 'RETIRADO / PROCESADO',
-    date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  });
+  // 3. RETIRAR PREMIO
+  window.handleAgentWithdrawal = async function(e) {
+    e.preventDefault();
+    await initDB();
 
-  await saveToCloud();
+    const username = document.getElementById('w-client-username').value;
+    const amountInput = document.getElementById('w-amount').value;
+    const details = document.getElementById('w-details').value.trim();
 
-  showToast(`¡Retiro procesado! Se descontaron ${amount.toLocaleString('es-PY')} GS`);
-  e.target.reset();
-  document.getElementById('client-balance-info').innerText = "Saldo disponible: 0 GS";
-  populateClientSelects();
-  renderClients();
-  renderAgentHistory();
-}
+    if (!username || !usersDB[username]) {
+      showToast('Selecciona un cliente válido', 'error');
+      return;
+    }
 
-// 4. HISTORIAL DE RETIROS
-function renderAgentHistory() {
-  const tbody = document.getElementById('table-history-body');
-  const cardsContainer = document.getElementById('cards-history-body');
-  if (!tbody || !cardsContainer) return;
+    const client = usersDB[username];
+    const amount = parseInt(amountInput);
+    const currentBalance = client.balance || 0;
 
-  const myWithdrawals = withdrawalsDB.filter(w => w.agent === currentAgent);
+    if (currentBalance <= 0) {
+      showToast(`El cliente ${client.name} no tiene saldo disponible (0 GS)`, 'error');
+      return;
+    }
 
-  if (myWithdrawals.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">No hay retiros registrados en tu historial.</td></tr>`;
-    cardsContainer.innerHTML = `<div class="text-center text-slate-500 text-xs py-4 col-span-full">No hay retiros registrados en tu historial.</div>`;
-    return;
-  }
+    if (amount > currentBalance) {
+      showToast(`Saldo insuficiente. El cliente solo posee ${currentBalance.toLocaleString('es-PY')} GS`, 'error');
+      return;
+    }
 
-  tbody.innerHTML = myWithdrawals.map(w => `
-    <tr class="hover:bg-slate-900/40 transition">
-      <td class="p-3 font-bold text-white">${w.username}</td>
-      <td class="p-3 font-black text-amber-400">${parseInt(w.amount).toLocaleString('es-PY')} GS</td>
-      <td class="p-3 text-slate-300 font-mono text-[11px]">${w.details}</td>
-      <td class="p-3 text-slate-400">${w.date}</td>
-      <td class="p-3 text-center"><span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-950 text-emerald-300 border border-emerald-800">${w.status}</span></td>
-    </tr>
-  `).join('');
+    usersDB[username].balance -= amount;
+    
+    withdrawalsDB.unshift({
+      agent: currentAgent,
+      username: client.name + ' (@' + client.username + ')',
+      amount: amount,
+      details: details,
+      status: 'RETIRADO / PROCESADO',
+      date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    });
 
-  cardsContainer.innerHTML = myWithdrawals.map(w => `
-    <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex flex-col gap-2 shadow-sm">
-      <div class="flex justify-between items-start">
-        <div class="text-xs font-bold text-white">${w.username}</div>
-        <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-950 text-emerald-300 border border-emerald-800">${w.status}</span>
-      </div>
-      <div class="bg-slate-900/60 p-2 rounded-lg border border-slate-800/60 text-xs">
-        <div class="text-[10px] text-slate-400">Monto: <span class="font-black text-amber-400">${parseInt(w.amount).toLocaleString('es-PY')} GS</span></div>
-        <div class="text-[10px] text-slate-300 font-mono mt-0.5">Método/Detalles: ${w.details}</div>
-        <div class="text-[9px] text-slate-500 mt-1">${w.date}</div>
-      </div>
-    </div>
-  `).join('');
-}
-
-// 5. CARGAR CARTÓN
-async function handleAgentAddTickets(e) {
-  e.preventDefault();
-  await initDB();
-
-  const username = document.getElementById('t-client-username').value;
-  const qtyInput = document.getElementById('t-quantity').value;
-
-  if (!username || !usersDB[username]) {
-    showToast('Selecciona un cliente válido', 'error');
-    return;
-  }
-
-  const qty = parseInt(qtyInput);
-  if (isNaN(qty) || qty <= 0) {
-    showToast('Ingresa una cantidad válida de cartones', 'error');
-    return;
-  }
-
-  usersDB[username].tickets = (usersDB[username].tickets || 0) + qty;
-  await saveToCloud();
-
-  showToast(`Se acreditaron ${qty} cartones a ${usersDB[username].name}`);
-  e.target.reset();
-  renderClients();
-  populateClientSelects();
-}
-
-async function quickAddTickets(username) {
-  const count = prompt(`Cantidad de cartones a cargar a ${usersDB[username].name}:`, "5");
-  if (count && !isNaN(count) && parseInt(count) > 0) {
-    usersDB[username].tickets = (usersDB[username].tickets || 0) + parseInt(count);
     await saveToCloud();
-    showToast(`¡Cartones cargados con éxito!`);
+
+    showToast(`¡Retiro procesado! Se descontaron ${amount.toLocaleString('es-PY')} GS`);
+    e.target.reset();
+    document.getElementById('client-balance-info').innerText = "Saldo disponible: 0 GS";
+    populateClientSelects();
     renderClients();
+    renderAgentHistory();
+  };
+
+  // 4. HISTORIAL DE RETIROS
+  function renderAgentHistory() {
+    const tbody = document.getElementById('table-history-body');
+    const cardsContainer = document.getElementById('cards-history-body');
+    if (!tbody || !cardsContainer) return;
+
+    const myWithdrawals = withdrawalsDB.filter(w => w.agent === currentAgent);
+
+    if (myWithdrawals.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">No hay retiros registrados en tu historial.</td></tr>`;
+      cardsContainer.innerHTML = `<div class="text-center text-slate-500 text-xs py-4 col-span-full">No hay retiros registrados en tu historial.</div>`;
+      return;
+    }
+
+    tbody.innerHTML = myWithdrawals.map(w => `
+      <tr class="hover:bg-slate-900/40 transition">
+        <td class="p-3 font-bold text-white">${w.username}</td>
+        <td class="p-3 font-black text-amber-400">${parseInt(w.amount).toLocaleString('es-PY')} GS</td>
+        <td class="p-3 text-slate-300 font-mono text-[11px]">${w.details}</td>
+        <td class="p-3 text-slate-400">${w.date}</td>
+        <td class="p-3 text-center"><span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-950 text-emerald-300 border border-emerald-800">${w.status}</span></td>
+      </tr>
+    `).join('');
+
+    cardsContainer.innerHTML = myWithdrawals.map(w => `
+      <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex flex-col gap-2 shadow-sm">
+        <div class="flex justify-between items-start">
+          <div class="text-xs font-bold text-white">${w.username}</div>
+          <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-950 text-emerald-300 border border-emerald-800">${w.status}</span>
+        </div>
+        <div class="bg-slate-900/60 p-2 rounded-lg border border-slate-800/60 text-xs">
+          <div class="text-[10px] text-slate-400">Monto: <span class="font-black text-amber-400">${parseInt(w.amount).toLocaleString('es-PY')} GS</span></div>
+          <div class="text-[10px] text-slate-300 font-mono mt-0.5">Método/Detalles: ${w.details}</div>
+          <div class="text-[9px] text-slate-500 mt-1">${w.date}</div>
+        </div>
+      </div>
+    `).join('');
   }
-}
 
-function showToast(msg, type = 'success') {
-  const toast = document.getElementById('toast');
-  const toastMsg = document.getElementById('toast-msg');
-  if (!toast || !toastMsg) return;
+  // 5. CARGAR CARTÓN
+  window.handleAgentAddTickets = async function(e) {
+    e.preventDefault();
+    await initDB();
 
-  toastMsg.innerText = msg;
-  toast.className = `fixed top-4 left-1/2 -translate-x-1/2 ${type === 'error' ? 'bg-red-500 text-white' : 'bg-emerald-500 text-slate-950'} px-4 py-2.5 rounded-full text-xs font-black shadow-2xl opacity-100 pointer-events-auto transition-all duration-300 z-50 flex items-center gap-2 max-w-[90vw] truncate`;
-  setTimeout(() => {
-    toast.classList.add('opacity-0', 'pointer-events-none');
-  }, 2500);
-}
+    const username = document.getElementById('t-client-username').value;
+    const qtyInput = document.getElementById('t-quantity').value;
 
-window.onload = checkAgentAuth;
+    if (!username || !usersDB[username]) {
+      showToast('Selecciona un cliente válido', 'error');
+      return;
+    }
+
+    const qty = parseInt(qtyInput);
+    if (isNaN(qty) || qty <= 0) {
+      showToast('Ingresa una cantidad válida de cartones', 'error');
+      return;
+    }
+
+    usersDB[username].tickets = (usersDB[username].tickets || 0) + qty;
+    await saveToCloud();
+
+    showToast(`Se acreditaron ${qty} cartones a ${usersDB[username].name}`);
+    e.target.reset();
+    renderClients();
+    populateClientSelects();
+  };
+
+  window.quickAddTickets = async function(username) {
+    const count = prompt(`Cantidad de cartones a cargar a ${usersDB[username].name}:`, "5");
+    if (count && !isNaN(count) && parseInt(count) > 0) {
+      usersDB[username].tickets = (usersDB[username].tickets || 0) + parseInt(count);
+      await saveToCloud();
+      showToast(`¡Cartones cargados con éxito!`);
+      renderClients();
+    }
+  };
+
+  function showToast(msg, type = 'success') {
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toast-msg');
+    if (!toast || !toastMsg) return;
+
+    toastMsg.innerText = msg;
+    toast.className = `fixed top-4 left-1/2 -translate-x-1/2 ${type === 'error' ? 'bg-red-500 text-white' : 'bg-emerald-500 text-slate-950'} px-4 py-2.5 rounded-full text-xs font-black shadow-2xl opacity-100 pointer-events-auto transition-all duration-300 z-50 flex items-center gap-2 max-w-[90vw] truncate`;
+    setTimeout(() => {
+      toast.classList.add('opacity-0', 'pointer-events-none');
+    }, 2500);
+  }
+
+  window.onload = checkAgentAuth;
 </script>
 </body>
 </html>
