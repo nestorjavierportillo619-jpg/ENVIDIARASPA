@@ -134,9 +134,6 @@ body {
       <button onclick="switchTab('history')" id="tab-history" class="py-2.5 px-3.5 sm:px-4 rounded-xl text-[11px] sm:text-xs font-extrabold text-slate-400 hover:text-white bg-slate-900/50 border border-slate-800/50 transition flex items-center justify-center gap-2 shrink-0">
         <i class="fa-solid fa-clock-rotate-left text-xs"></i> Historial
       </button>
-      <button onclick="switchTab('tickets')" id="tab-tickets" class="py-2.5 px-3.5 sm:px-4 rounded-xl text-[11px] sm:text-xs font-extrabold text-slate-400 hover:text-white bg-slate-900/50 border border-slate-800/50 transition flex items-center justify-center gap-2 shrink-0">
-        <i class="fa-solid fa-ticket text-xs"></i> Cargar Cartón
-      </button>
     </div>
 
     <div class="p-3 sm:p-5 md:p-6 flex-1 flex flex-col gap-5 max-h-[75vh] overflow-y-auto">
@@ -175,7 +172,7 @@ body {
           <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800/60">
             <div class="flex items-center gap-2">
               <i class="fa-solid fa-users text-purple-400 text-xs"></i>
-              <h3 class="text-xs font-extrabold text-white uppercase tracking-wider">Mis Clientes Registrados</h3>
+              <h3 class="text-xs font-extrabold text-white uppercase tracking-wider">Mis Clientes (Gestión, Cartones y Eliminación)</h3>
             </div>
           </div>
 
@@ -185,10 +182,10 @@ body {
               <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] font-bold border-b border-slate-800">
                 <tr>
                   <th class="p-3">ID / Nombre</th>
-                  <th class="p-3">Usuario</th>
+                  <th class="p-3">Usuario y Pass</th>
                   <th class="p-3">Saldo GS</th>
                   <th class="p-3">Cartones Disponibles</th>
-                  <th class="p-3 text-center">Acción Rápida</th>
+                  <th class="p-3 text-center">Acciones</th>
                 </tr>
               </thead>
               <tbody id="table-clients-body" class="divide-y divide-slate-800/60"></tbody>
@@ -237,9 +234,17 @@ body {
         </div>
       </div>
 
-      <!-- SECCIÓN 4: HISTORIAL DE RETIROS DEL AGENTE -->
-      <div id="section-history" class="hidden flex-col gap-5">
-        <div class="bg-slate-900/60 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-800 shadow-xl">
+      <!-- SECCIÓN 4: HISTORIAL GENERAL -->
+      <div id="section-history" class="hidden flex-col gap-6">
+        
+        <!-- Pestaña interna de Historial -->
+        <div class="flex gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800/80 max-w-sm">
+          <button onclick="switchHistorySubTab('withdrawals')" id="subtab-w" class="flex-1 py-2 rounded-lg text-xs font-bold bg-purple-500 text-slate-950 transition">Historial de Retiros</button>
+          <button onclick="switchHistorySubTab('tickets')" id="subtab-t" class="flex-1 py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition">Movimientos de Cartones</button>
+        </div>
+
+        <!-- 1. HISTORIAL DE RETIROS -->
+        <div id="history-box-withdrawals" class="bg-slate-900/60 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-800 shadow-xl">
           <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800/60">
             <div class="flex items-center gap-2">
               <i class="fa-solid fa-clock-rotate-left text-amber-400 text-xs"></i>
@@ -247,7 +252,6 @@ body {
             </div>
           </div>
 
-          <!-- Vista PC -->
           <div class="hidden md:block overflow-x-auto rounded-xl border border-slate-800 bg-slate-950">
             <table class="w-full text-left text-xs text-slate-300">
               <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] font-bold border-b border-slate-800">
@@ -262,41 +266,34 @@ body {
               <tbody id="table-history-body" class="divide-y divide-slate-800/60"></tbody>
             </table>
           </div>
-
-          <!-- Vista Celulares -->
           <div id="cards-history-body" class="grid grid-cols-1 gap-3 md:hidden"></div>
         </div>
-      </div>
 
-      <!-- SECCIÓN 5: CARGAR CARTÓN -->
-      <div id="section-tickets" class="hidden flex-col gap-5">
-        <div class="bg-slate-900/60 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-800 shadow-xl max-w-xl mx-auto w-full">
-          <div class="flex items-center gap-2 mb-3 pb-2 border-b border-slate-800/60">
-            <i class="fa-solid fa-ticket text-purple-400 text-xs"></i>
-            <h3 class="text-xs font-extrabold text-white uppercase tracking-wider">Cargar Cartones a Cliente</h3>
+        <!-- 2. HISTORIAL DE MOVIMIENTOS DE CARTONES -->
+        <div id="history-box-tickets" class="hidden bg-slate-900/60 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-800 shadow-xl">
+          <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800/60">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-ticket text-purple-400 text-xs"></i>
+              <h3 class="text-xs font-extrabold text-white uppercase tracking-wider">Historial de Cargas y Retiros de Cartones</h3>
+            </div>
           </div>
-          
-          <form onsubmit="handleAgentAddTickets(event)" class="flex flex-col gap-3.5">
-            <div class="space-y-1 relative">
-              <label class="block text-[10px] font-bold text-slate-400 uppercase">Escribir o Buscar Usuario / Nombre</label>
-              <div class="relative">
-                <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-500 text-xs"></i>
-                <input type="text" id="t-client-search" required autocomplete="off" placeholder="Escribe el usuario o nombre..." oninput="filterClientsDropdown('t')" class="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-xs text-white font-bold focus:outline-none focus:border-purple-500">
-              </div>
 
-              <!-- Menú desplegable dinámico de sugerencias -->
-              <div id="t-dropdown-results" class="hidden absolute left-0 right-0 top-full mt-1 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-20 max-h-48 overflow-y-auto divide-y divide-slate-800"></div>
-            </div>
-
-            <div class="space-y-1">
-              <label class="block text-[10px] font-bold text-slate-400 uppercase">Cantidad de Cartones</label>
-              <input type="number" id="t-quantity" min="1" required placeholder="10" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-purple-500">
-            </div>
-            <div class="pt-1">
-              <button type="submit" class="w-full py-3.5 rounded-xl font-black text-slate-950 bg-purple-400 hover:bg-purple-300 transition text-xs shadow-lg uppercase tracking-wider">Acreditar Cartones</button>
-            </div>
-          </form>
+          <div class="hidden md:block overflow-x-auto rounded-xl border border-slate-800 bg-slate-950">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] font-bold border-b border-slate-800">
+                <tr>
+                  <th class="p-3">Cliente</th>
+                  <th class="p-3">Acción</th>
+                  <th class="p-3">Cantidad</th>
+                  <th class="p-3">Fecha y Hora</th>
+                </tr>
+              </thead>
+              <tbody id="table-tickets-history-body" class="divide-y divide-slate-800/60"></tbody>
+            </table>
+          </div>
+          <div id="cards-tickets-history-body" class="grid grid-cols-1 gap-3 md:hidden"></div>
         </div>
+
       </div>
 
     </div>
@@ -323,11 +320,10 @@ body {
 
   let usersDB = {};
   let withdrawalsDB = [];
+  let ticketLogsDB = [];
   let currentAgent = null;
 
-  // Variables para almacenar el username seleccionado actualmente en Retiros y Cargar Cartón
   window.selectedWithdrawalUser = "";
-  window.selectedTicketUser = "";
 
   async function initDB() {
     try {
@@ -338,6 +334,7 @@ body {
         const data = docSnap.data();
         usersDB = data.users || {};
         withdrawalsDB = data.withdrawals || [];
+        ticketLogsDB = data.ticketLogs || [];
       }
     } catch (e) {
       console.error("Error al conectar con Firebase:", e);
@@ -350,12 +347,44 @@ body {
       const docRef = doc(db, "sistema", "datos_globales");
       await setDoc(docRef, {
         users: usersDB,
-        withdrawals: withdrawalsDB
+        withdrawals: withdrawalsDB,
+        ticketLogs: ticketLogsDB
       }, { merge: true });
     } catch (e) {
       console.error("Error al guardar en Firebase:", e);
       showToast("Error al sincronizar con la nube", "error");
     }
+  }
+
+  window.copyUserAndPass = function(username, password) {
+    const textToCopy = `Usuario: ${username}\nContraseña: ${password}`;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        showToast(`Copiado: Usuario: ${username}`);
+      }).catch(err => {
+        fallbackCopyTextToClipboard(textToCopy, username);
+      });
+    } else {
+      fallbackCopyTextToClipboard(textToCopy, username);
+    }
+  };
+
+  function fallbackCopyTextToClipboard(text, username) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      showToast(`Copiado: Usuario: ${username}`);
+    } catch (err) {
+      showToast('Error al copiar', 'error');
+    }
+    document.body.removeChild(textArea);
   }
 
   window.handleAgentLogin = async function(e) {
@@ -398,6 +427,7 @@ body {
     updateAgentStockDisplay();
     renderClients();
     renderAgentHistory();
+    renderTicketHistory();
   }
 
   function updateAgentStockDisplay() {
@@ -410,7 +440,7 @@ body {
   }
 
   window.switchTab = function(tab) {
-    const sections = ['create', 'clients', 'withdrawals', 'history', 'tickets'];
+    const sections = ['create', 'clients', 'withdrawals', 'history'];
     sections.forEach(s => {
       const secEl = document.getElementById(`section-${s}`);
       const tabEl = document.getElementById(`tab-${s}`);
@@ -424,7 +454,29 @@ body {
     if (activeTab) activeTab.className = "py-2.5 px-3.5 sm:px-4 rounded-xl text-[11px] sm:text-xs font-extrabold bg-purple-500 text-slate-950 transition flex items-center justify-center gap-2 shrink-0 shadow-lg shadow-purple-500/10";
 
     if (tab === 'clients') renderClients();
-    if (tab === 'history') renderAgentHistory();
+    if (tab === 'history') {
+      renderAgentHistory();
+      renderTicketHistory();
+    }
+  };
+
+  window.switchHistorySubTab = function(sub) {
+    const boxW = document.getElementById('history-box-withdrawals');
+    const boxT = document.getElementById('history-box-tickets');
+    const btnW = document.getElementById('subtab-w');
+    const btnT = document.getElementById('subtab-t');
+
+    if (sub === 'withdrawals') {
+      boxW.classList.remove('hidden');
+      boxT.classList.add('hidden');
+      btnW.className = "flex-1 py-2 rounded-lg text-xs font-bold bg-purple-500 text-slate-950 transition";
+      btnT.className = "flex-1 py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition";
+    } else {
+      boxW.classList.add('hidden');
+      boxT.classList.remove('hidden');
+      btnT.className = "flex-1 py-2 rounded-lg text-xs font-bold bg-purple-500 text-slate-950 transition";
+      btnW.className = "flex-1 py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition";
+    }
   };
 
   function getMyClients() {
@@ -492,11 +544,31 @@ body {
       return `
         <tr class="hover:bg-slate-900/40 transition">
           <td class="p-3 font-bold text-white">${u.name}<br><span class="text-[10px] text-purple-400 font-mono">${u.id}</span></td>
-          <td class="p-3 text-slate-300 font-mono">@${u.username}</td>
+          <td class="p-3 text-slate-300 font-mono">
+            <div class="flex items-center gap-2">
+              <div>
+                <span class="block text-white font-bold">Usuario: ${u.username}</span>
+                <span class="block text-[10px] text-slate-400">Contraseña: ${u.password || '••••••'}</span>
+              </div>
+              <button onclick="copyUserAndPass('${u.username}', '${u.password || ''}')" title="Copiar usuario y contraseña" class="px-2.5 py-1 rounded-lg bg-purple-500/10 border border-purple-500/30 hover:bg-purple-500 hover:text-slate-950 text-purple-400 transition flex items-center gap-1 text-[10px] font-bold">
+                <i class="fa-solid fa-copy"></i> Copiar
+              </button>
+            </div>
+          </td>
           <td class="p-3 font-black text-amber-400">${(u.balance || 0).toLocaleString('es-PY')} GS</td>
           <td class="p-3 font-black text-purple-300">${u.tickets || 0} Cartones</td>
           <td class="p-3 text-center">
-            <button onclick="quickAddTickets('${k}')" class="bg-purple-500/10 hover:bg-purple-500 text-purple-400 hover:text-slate-950 px-3 py-1.5 rounded-lg text-[10px] font-extrabold border border-purple-500/30 transition">Cargar Cartón</button>
+            <div class="flex items-center justify-center gap-1.5">
+              <button onclick="modifyClientTickets('${k}', 'add')" title="Cargar Cartón" class="bg-purple-500/10 hover:bg-purple-500 text-purple-400 hover:text-slate-950 px-2 py-1.5 rounded-lg text-[10px] font-extrabold border border-purple-500/30 transition flex items-center gap-1">
+                <i class="fa-solid fa-plus"></i> Cargar
+              </button>
+              <button onclick="modifyClientTickets('${k}', 'remove')" title="Quitar Cartón" class="bg-amber-500/10 hover:bg-amber-500 text-amber-400 hover:text-slate-950 px-2 py-1.5 rounded-lg text-[10px] font-extrabold border border-amber-500/30 transition flex items-center gap-1">
+                <i class="fa-solid fa-minus"></i> Quitar
+              </button>
+              <button onclick="deleteClient('${k}')" title="Eliminar Cliente" class="bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-slate-950 px-2 py-1.5 rounded-lg text-[10px] font-extrabold border border-red-500/30 transition flex items-center gap-1">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
           </td>
         </tr>
       `;
@@ -509,35 +581,73 @@ body {
           <div class="flex items-center justify-between">
             <div>
               <div class="text-xs font-black text-white">${u.name}</div>
-              <div class="text-[10px] text-purple-400 font-mono">${u.id} • @${u.username}</div>
+              <div class="text-[10px] text-purple-400 font-mono">${u.id}</div>
+              <div class="text-[10px] text-slate-300 font-mono mt-1">Usuario: <span class="text-white font-bold">${u.username}</span></div>
+              <div class="text-[10px] text-slate-400 font-mono">Contraseña: ${u.password || '••••••'}</div>
             </div>
+            <button onclick="copyUserAndPass('${u.username}', '${u.password || ''}')" title="Copiar usuario y contraseña" class="px-2.5 py-1.5 rounded-lg bg-purple-500/10 border border-purple-500/30 hover:bg-purple-500 hover:text-slate-950 text-purple-400 transition flex items-center gap-1.5 text-[10px] font-bold active:scale-95 shrink-0">
+              <i class="fa-solid fa-copy"></i> Copiar
+            </button>
           </div>
           <div class="flex justify-between items-center text-xs bg-slate-900/60 p-2 rounded-lg border border-slate-800/60">
             <div><span class="text-[10px] text-slate-400 block">Saldo</span><span class="font-black text-amber-400">${(u.balance || 0).toLocaleString('es-PY')} GS</span></div>
             <div class="text-right"><span class="text-[10px] text-slate-400 block">Cartones</span><span class="font-black text-purple-300">${u.tickets || 0}</span></div>
           </div>
-          <div class="pt-0.5">
-            <button onclick="quickAddTickets('${k}')" class="w-full bg-purple-500/10 hover:bg-purple-500 text-purple-400 hover:text-slate-950 py-1.5 rounded-lg text-[10px] font-extrabold border border-purple-500/30 transition text-center">Cargar Cartón</button>
+          <div class="grid grid-cols-3 gap-1.5 pt-0.5">
+            <button onclick="modifyClientTickets('${k}', 'add')" class="bg-purple-500/10 hover:bg-purple-500 text-purple-400 hover:text-slate-950 py-1.5 rounded-lg text-[10px] font-extrabold border border-purple-500/30 transition text-center flex items-center justify-center gap-1">
+              <i class="fa-solid fa-plus"></i> Cargar
+            </button>
+            <button onclick="modifyClientTickets('${k}', 'remove')" class="bg-amber-500/10 hover:bg-amber-500 text-amber-400 hover:text-slate-950 py-1.5 rounded-lg text-[10px] font-extrabold border border-amber-500/30 transition text-center flex items-center justify-center gap-1">
+              <i class="fa-solid fa-minus"></i> Quitar
+            </button>
+            <button onclick="deleteClient('${k}')" class="bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-slate-950 py-1.5 rounded-lg text-[10px] font-extrabold border border-red-500/30 transition text-center flex items-center justify-center gap-1">
+              <i class="fa-solid fa-trash"></i> Borrar
+            </button>
           </div>
         </div>
       `;
     }).join('');
   }
 
-  // --- FILTRADO DINÁMICO PARA ESCRIBIR/BUSCAR USUARIO ---
+  // --- FUNCIÓN PARA ELIMINAR CLIENTE ---
+  window.deleteClient = async function(usernameKey) {
+    await initDB();
+
+    if (!usersDB[usernameKey] || usersDB[usernameKey].createdBy !== currentAgent) {
+      showToast('Este cliente no te pertenece o no existe', 'error');
+      return;
+    }
+
+    const clientName = usersDB[usernameKey].name;
+    const confirmDelete = confirm(`¿Estás seguro de que deseas eliminar al cliente "${clientName}"? Esta acción no se puede deshacer.`);
+
+    if (confirmDelete) {
+      // Si el cliente tenía cartones, opcionalmente puedes devolverlos al stock del agente si lo deseas:
+      const clientTickets = usersDB[usernameKey].tickets || 0;
+      if (clientTickets > 0 && usersDB[currentAgent]) {
+        usersDB[currentAgent].tickets = (usersDB[currentAgent].tickets || 0) + clientTickets;
+      }
+
+      // Eliminar de la base de datos
+      delete usersDB[usernameKey];
+
+      await saveToCloud();
+      showToast(`Cliente ${clientName} eliminado correctamente`);
+      updateAgentStockDisplay();
+      renderClients();
+    }
+  };
+
+  // --- FILTRADO DINÁMICO PARA RETIROS ---
   window.filterClientsDropdown = function(type) {
-    const inputId = type === 'w' ? 'w-client-search' : 't-client-search';
-    const dropdownId = type === 'w' ? 'w-dropdown-results' : 't-dropdown-results';
+    const inputId = 'w-client-search';
+    const dropdownId = 'w-dropdown-results';
     const query = document.getElementById(inputId).value.toLowerCase().trim();
     const dropdown = document.getElementById(dropdownId);
 
-    if (type === 'w') {
-      window.selectedWithdrawalUser = "";
-      document.getElementById('client-balance-info').innerText = "Saldo disponible: 0 GS";
-      document.getElementById('client-balance-info').className = "text-[10px] text-slate-400 block font-bold mt-1";
-    } else {
-      window.selectedTicketUser = "";
-    }
+    window.selectedWithdrawalUser = "";
+    document.getElementById('client-balance-info').innerText = "Saldo disponible: 0 GS";
+    document.getElementById('client-balance-info').className = "text-[10px] text-slate-400 block font-bold mt-1";
 
     const clients = getMyClients();
     const keys = Object.keys(clients).filter(k => {
@@ -555,7 +665,7 @@ body {
     dropdown.innerHTML = keys.map(k => {
       const u = clients[k];
       return `
-        <div onclick="selectClientFromSearch('${type}', '${k}', '${u.name}', '${u.username}', ${u.balance || 0})" class="p-2.5 hover:bg-slate-800 cursor-pointer flex justify-between items-center transition">
+        <div onclick="selectClientFromSearch('${k}', '${u.name}', '${u.username}', ${u.balance || 0})" class="p-2.5 hover:bg-slate-800 cursor-pointer flex justify-between items-center transition">
           <div>
             <div class="text-xs font-bold text-white">${u.name} <span class="text-purple-400 font-mono">(@${u.username})</span></div>
             <div class="text-[9px] text-slate-400">${u.id}</div>
@@ -568,20 +678,14 @@ body {
     }).join('');
   };
 
-  window.selectClientFromSearch = function(type, usernameKey, name, username, balance) {
-    if (type === 'w') {
-      window.selectedWithdrawalUser = usernameKey;
-      document.getElementById('w-client-search').value = `${name} (@${username})`;
-      document.getElementById('w-dropdown-results').classList.add('hidden');
-      
-      const infoEl = document.getElementById('client-balance-info');
-      infoEl.innerText = `Saldo disponible: ${balance.toLocaleString('es-PY')} GS`;
-      infoEl.className = balance > 0 ? "text-[10px] text-emerald-400 block font-bold mt-1" : "text-[10px] text-red-400 block font-bold mt-1";
-    } else {
-      window.selectedTicketUser = usernameKey;
-      document.getElementById('t-client-search').value = `${name} (@${username})`;
-      document.getElementById('t-dropdown-results').classList.add('hidden');
-    }
+  window.selectClientFromSearch = function(usernameKey, name, username, balance) {
+    window.selectedWithdrawalUser = usernameKey;
+    document.getElementById('w-client-search').value = `${name} (@${username})`;
+    document.getElementById('w-dropdown-results').classList.add('hidden');
+    
+    const infoEl = document.getElementById('client-balance-info');
+    infoEl.innerText = `Saldo disponible: ${balance.toLocaleString('es-PY')} GS`;
+    infoEl.className = balance > 0 ? "text-[10px] text-emerald-400 block font-bold mt-1" : "text-[10px] text-red-400 block font-bold mt-1";
   };
 
   window.handleAgentWithdrawal = async function(e) {
@@ -670,51 +774,51 @@ body {
     `).join('');
   }
 
-  // CARGAR CARTÓN VALIDANDO STOCK DEL AGENTE Y PERTENENCIA DEL CLIENTE
-  window.handleAgentAddTickets = async function(e) {
-    e.preventDefault();
-    await initDB();
+  function renderTicketHistory() {
+    const tbody = document.getElementById('table-tickets-history-body');
+    const cardsContainer = document.getElementById('cards-tickets-history-body');
+    if (!tbody || !cardsContainer) return;
 
-    const username = window.selectedTicketUser;
-    const qtyInput = document.getElementById('t-quantity').value;
+    const myLogs = ticketLogsDB.filter(l => l.agent === currentAgent);
 
-    if (!username || !usersDB[username]) {
-      showToast('Selecciona o escribe un cliente válido de la lista', 'error');
+    if (myLogs.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">No hay movimientos de cartones registrados.</td></tr>`;
+      cardsContainer.innerHTML = `<div class="text-center text-slate-500 text-xs py-4 col-span-full">No hay movimientos de cartones registrados.</div>`;
       return;
     }
 
-    if (usersDB[username].createdBy !== currentAgent) {
-      showToast('Este cliente no te pertenece', 'error');
-      return;
-    }
+    tbody.innerHTML = myLogs.map(l => `
+      <tr class="hover:bg-slate-900/40 transition">
+        <td class="p-3 font-bold text-white">${l.username}</td>
+        <td class="p-3">
+          <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black ${l.type === 'add' ? 'bg-purple-950 text-purple-300 border border-purple-800' : 'bg-red-950 text-red-300 border border-red-800'}">
+            ${l.type === 'add' ? 'CARGA DE CARTÓN' : 'RETIRO DE CARTÓN'}
+          </span>
+        </td>
+        <td class="p-3 font-black ${l.type === 'add' ? 'text-purple-300' : 'text-red-400'}">${l.type === 'add' ? '+' : '-'}${l.qty} Cartones</td>
+        <td class="p-3 text-slate-400">${l.date}</td>
+      </tr>
+    `).join('');
 
-    const qty = parseInt(qtyInput);
-    if (isNaN(qty) || qty <= 0) {
-      showToast('Ingresa una cantidad válida de cartones', 'error');
-      return;
-    }
+    cardsContainer.innerHTML = myLogs.map(l => `
+      <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex flex-col gap-2 shadow-sm">
+        <div class="flex justify-between items-start">
+          <div class="text-xs font-bold text-white">${l.username}</div>
+          <span class="px-2 py-0.5 rounded-full text-[9px] font-black ${l.type === 'add' ? 'bg-purple-950 text-purple-300 border border-purple-800' : 'bg-red-950 text-red-300 border border-red-800'}">
+            ${l.type === 'add' ? 'CARGA' : 'QUITAR'}
+          </span>
+        </div>
+        <div class="bg-slate-900/60 p-2 rounded-lg border border-slate-800/60 text-xs flex justify-between items-center">
+          <div>
+            <div class="text-[10px] text-slate-400">Cantidad: <span class="font-black ${l.type === 'add' ? 'text-purple-300' : 'text-red-400'}">${l.type === 'add' ? '+' : '-'}${l.qty} Cartones</span></div>
+          </div>
+          <div class="text-[9px] text-slate-500">${l.date}</div>
+        </div>
+      </div>
+    `).join('');
+  }
 
-    const agentData = usersDB[currentAgent];
-    const currentStock = agentData.tickets || 0;
-
-    if (qty > currentStock) {
-      showToast(`Stock insuficiente. Tienes ${currentStock} cartones disponibles.`, 'error');
-      return;
-    }
-
-    usersDB[currentAgent].tickets -= qty;
-    usersDB[username].tickets = (usersDB[username].tickets || 0) + qty;
-    
-    await saveToCloud();
-
-    showToast(`Se acreditaron ${qty} cartones a ${usersDB[username].name}`);
-    e.target.reset();
-    window.selectedTicketUser = "";
-    updateAgentStockDisplay();
-    renderClients();
-  };
-
-  window.quickAddTickets = async function(username) {
+  window.modifyClientTickets = async function(username, action) {
     await initDB();
 
     if (!usersDB[username] || usersDB[username].createdBy !== currentAgent) {
@@ -724,24 +828,49 @@ body {
 
     const agentData = usersDB[currentAgent];
     const currentStock = agentData.tickets || 0;
+    const client = usersDB[username];
+    const currentClientTickets = client.tickets || 0;
 
-    const count = prompt(`Cantidad de cartones a cargar a ${usersDB[username].name}\n(Stock disponible: ${currentStock}):`, "5");
+    let promptMsg = action === 'add' 
+      ? `Cantidad de cartones a CARGAR a ${client.name}\n(Stock disponible tuyo: ${currentStock}):`
+      : `Cantidad de cartones a QUITAR a ${client.name}\n(Cartones actuales del cliente: ${currentClientTickets}):`;
+
+    const count = prompt(promptMsg, "1");
     
     if (count && !isNaN(count) && parseInt(count) > 0) {
       const qty = parseInt(count);
+      const currentDate = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-      if (qty > currentStock) {
-        showToast(`Stock insuficiente. Solo tienes ${currentStock} cartones disponibles.`, 'error');
-        return;
+      if (action === 'add') {
+        if (qty > currentStock) {
+          showToast(`Stock insuficiente. Solo tienes ${currentStock} cartones disponibles.`, 'error');
+          return;
+        }
+        usersDB[currentAgent].tickets -= qty;
+        usersDB[username].tickets = currentClientTickets + qty;
+        showToast(`¡Se cargaron ${qty} cartones a ${client.name}!`);
+      } else {
+        if (qty > currentClientTickets) {
+          showToast(`El cliente solo tiene ${currentClientTickets} cartones disponibles para quitar.`, 'error');
+          return;
+        }
+        usersDB[username].tickets = currentClientTickets - qty;
+        usersDB[currentAgent].tickets = currentStock + qty; 
+        showToast(`¡Se quitaron ${qty} cartones a ${client.name}!`);
       }
-
-      usersDB[currentAgent].tickets -= qty;
-      usersDB[username].tickets = (usersDB[username].tickets || 0) + qty;
       
+      ticketLogsDB.unshift({
+        agent: currentAgent,
+        username: client.name + ' (@' + client.username + ')',
+        type: action,
+        qty: qty,
+        date: currentDate
+      });
+
       await saveToCloud();
-      showToast(`¡Cartones cargados con éxito!`);
       updateAgentStockDisplay();
       renderClients();
+      renderTicketHistory();
     }
   };
 
