@@ -448,7 +448,7 @@ body {
             </div>
             <div class="sm:col-span-2 space-y-1">
               <label class="block text-[10px] font-bold text-slate-400 uppercase">Probabilidad de Ganar Global (1% al 100%)</label>
-              <input type="number" id="cfg-win-rate" min="1" max="100" required placeholder="45" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500">
+              <input type="number" id="cfg-win-rate" min="0" max="100" required placeholder="0" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500">
             </div>
             <div class="sm:col-span-2 pt-1">
               <button type="submit" class="w-full py-3 rounded-xl font-black text-slate-950 bg-amber-500 hover:bg-amber-400 transition text-xs shadow-lg uppercase tracking-wider">Guardar Cambios del Cartón</button>
@@ -564,7 +564,7 @@ body {
       subtitle: 'MILLONARIO ORIGINAL',
       maxPrizeText: 'GANA HASTA 5.000.000 GS',
       price: 5000,
-      winRate: 45
+      winRate: 0
     };
   }
 
@@ -1170,7 +1170,7 @@ body {
     if (cfgSubtitle) cfgSubtitle.value = cardConfigDB.subtitle || 'MILLONARIO ORIGINAL';
     if (cfgMaxPrize) cfgMaxPrize.value = cardConfigDB.maxPrizeText || 'GANA HASTA 5.000.000 GS';
     if (cfgPrice) cfgPrice.value = cardConfigDB.price || 5000;
-    if (cfgWinRate) cfgWinRate.value = cardConfigDB.winRate || 45;
+    if (cfgWinRate) cfgWinRate.value = cardConfigDB.winRate || 0;
   }
 
   window.handleSaveCardConfig = async function(e) {
