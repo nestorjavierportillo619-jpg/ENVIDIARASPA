@@ -7,6 +7,11 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<!-- FIREBASE SDKs (Compat v9) -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
 <style>
 body {
   font-family: 'Poppins', sans-serif;
@@ -52,7 +57,7 @@ body {
     <span id="toast-msg" class="truncate">Mensaje</span>
   </div>
 
-  <!-- 1. PANTALLA DE LOGIN DE ADMINISTRADOR (SOLO CONTRASEÑA) -->
+  <!-- 1. PANTALLA DE LOGIN DE ADMINISTRADOR -->
   <div id="view-login" class="p-5 sm:p-8 md:p-12 flex flex-col gap-6 max-w-md mx-auto w-full my-auto">
     <div class="text-center">
       <div class="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-tr from-amber-500 via-orange-500 to-purple-600 rounded-2xl sm:rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-amber-500/10 border border-amber-400/20">
@@ -84,7 +89,7 @@ body {
         </div>
         <div>
           <h2 class="text-xs sm:text-sm font-black gold-gradient-text tracking-wide uppercase">ADMINISTRACIÓN</h2>
-          <span class="text-[9px] sm:text-[10px] text-slate-400 font-medium block" id="admin-session-title">Control de Operaciones</span>
+          <span class="text-[9px] sm:text-[10px] text-slate-400 font-medium block">Sincronizado con Firebase ☁️</span>
         </div>
       </div>
       <div class="flex items-center gap-2">
@@ -97,7 +102,7 @@ body {
       </div>
     </div>
 
-    <!-- Menú de Pestañas Organizadas -->
+    <!-- Menú de Pestañas -->
     <div class="flex p-2 bg-slate-950 border-b border-slate-800/80 overflow-x-auto no-scrollbar gap-2">
       <button onclick="switchTab('users')" id="tab-users" class="py-2.5 px-3.5 sm:px-4 rounded-xl text-[11px] sm:text-xs font-extrabold bg-amber-500 text-slate-950 transition flex items-center justify-center gap-2 shrink-0">
         <i class="fa-solid fa-users text-xs"></i> Usuarios
@@ -150,7 +155,7 @@ body {
               </select>
             </div>
             <div class="sm:col-span-2 md:col-span-4 pt-1">
-              <button type="submit" class="w-full py-3 rounded-xl font-black text-slate-950 bg-amber-500 hover:bg-amber-400 transition text-xs shadow-lg uppercase tracking-wider">Guardar Usuario</button>
+              <button type="submit" class="w-full py-3 rounded-xl font-black text-slate-950 bg-amber-500 hover:bg-amber-400 transition text-xs shadow-lg uppercase tracking-wider">Guardar Usuario en la Nube</button>
             </div>
           </form>
         </div>
@@ -248,7 +253,7 @@ body {
         </div>
       </div>
 
-      <!-- CONTENIDO 2: RETIROS (CON RETIRO DIRECTO SIN SOLICITAR) -->
+      <!-- CONTENIDO 2: RETIROS -->
       <div id="section-withdrawals" class="hidden flex-col gap-5">
         <div class="bg-slate-900/60 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-800 shadow-xl">
           <div class="flex items-center gap-2 mb-3 pb-2 border-b border-slate-800/60">
@@ -315,7 +320,7 @@ body {
             <input type="hidden" id="prize-index-edit" value="-1">
             <div class="space-y-1">
               <label class="block text-[10px] font-bold text-slate-400 uppercase">Nombre del Premio</label>
-              <input type="text" id="prize-name" required placeholder="Ej: Joker" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500">
+              <input type="text" id="prize-name" required placeholder="Ej: Auto 0KM" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500">
             </div>
             <div class="space-y-1">
               <label class="block text-[10px] font-bold text-slate-400 uppercase">Valor Premio (GS)</label>
@@ -324,13 +329,14 @@ body {
             <div class="space-y-1">
               <label class="block text-[10px] font-bold text-slate-400 uppercase">Representación</label>
               <select id="prize-type" onchange="togglePrizeTypeInput()" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white font-bold focus:outline-none focus:border-amber-500">
-                <option value="emoji">Premios con emoji</option>
+                <option value="emoji">Emoji (🏎️, 💎, 🏆)</option>
+                <option value="icon">Icono FontAwesome (fa-gem)</option>
                 <option value="image">URL Imagen (http/https)</option>
               </select>
             </div>
             <div class="space-y-1">
-              <label class="block text-[10px] font-bold text-slate-400 uppercase">Tu Emoji / URL</label>
-              <input type="text" id="prize-val" required placeholder="Tu emoji acá" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500">
+              <label class="block text-[10px] font-bold text-slate-400 uppercase">Valor / Emoji / URL</label>
+              <input type="text" id="prize-val" required placeholder="🏎️" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500">
             </div>
             <div class="sm:col-span-2 md:col-span-4 flex gap-2 pt-1">
               <button type="submit" class="flex-1 py-3 rounded-xl font-black text-slate-950 bg-amber-500 hover:bg-amber-400 transition text-xs shadow-lg uppercase tracking-wider">Guardar Premio</button>
@@ -409,53 +415,89 @@ body {
 </div>
 
 <script>
-// BASE DE DATOS LOCAL SEGURA
+// CONFIGURACIÓN DE FIREBASE
+const firebaseConfig = {
+  apiKey: "AIzaSyBVYB9BRSMPR4S6QpogWGnSSqwFCI1-bh8",
+  authDomain: "raspaygana-fdacb.firebaseapp.com",
+  projectId: "raspaygana-fdacb",
+  storageBucket: "raspaygana-fdacb.firebasestorage.app",
+  messagingSenderId: "851746213050",
+  appId: "1:851746213050:web:f27c58c79af81caedb4683"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// VARIABLES GLOBALES
 let usersDB = {};
 let withdrawalsDB = [];
 let prizesDB = [];
 let cardConfigDB = {};
 let adminPassword = 'Romi';
 
-function initDB() {
+// SINCRONIZAR DESDE FIREBASE AL INICIAR
+async function initDB() {
   try {
-    usersDB = JSON.parse(localStorage.getItem('raspa_users_db') || '{}');
-    withdrawalsDB = JSON.parse(localStorage.getItem('raspa_withdrawals_db') || '[]');
-    prizesDB = JSON.parse(localStorage.getItem('raspa_prizes_db') || 'null');
-    cardConfigDB = JSON.parse(localStorage.getItem('raspa_card_config') || 'null');
-    adminPassword = localStorage.getItem('raspa_admin_pass') || 'Romi';
+    const docRef = db.collection("sistema").doc("datos_globales");
+    const docSnap = await docRef.get();
+
+    if (docSnap.exists) {
+      const data = docSnap.data();
+      usersDB = data.users || {};
+      withdrawalsDB = data.withdrawals || [];
+      prizesDB = data.prizes || getDefaultPrizes();
+      cardConfigDB = data.cardConfig || getDefaultCardConfig();
+      adminPassword = data.adminPass || 'Romi';
+    } else {
+      // Si está vacío, creamos los datos iniciales en la nube
+      prizesDB = getDefaultPrizes();
+      cardConfigDB = getDefaultCardConfig();
+      await saveToCloud();
+    }
   } catch (e) {
-    usersDB = {};
-    withdrawalsDB = [];
-    prizesDB = null;
-    cardConfigDB = null;
-    adminPassword = 'Romi';
-  }
-
-  if (!prizesDB || !Array.isArray(prizesDB)) {
-    prizesDB = [
-      { id: 'p1', name: 'Imán de la Suerte', type: 'icon', val: 'fa-magnet', color: 'text-red-500', prize: 300000 },
-      { id: 'p2', name: 'Sombrero Mágico', type: 'icon', val: 'fa-hat-wizard', color: 'text-purple-600', prize: 50000 },
-      { id: 'p3', name: 'Paraguas Dorado', type: 'icon', val: 'fa-umbrella', color: 'text-indigo-500', prize: 3000000 },
-      { id: 'p4', name: 'Corona Real', type: 'icon', val: 'fa-crown', color: 'text-amber-500', prize: 100000 },
-      { id: 'p5', name: 'Auto Deportivo', type: 'emoji', val: '🏎️', color: '', prize: 20000000 },
-      { id: 'p6', name: 'Bolsa de Billetes', type: 'icon', val: 'fa-money-bill-wave', color: 'text-green-600', prize: 20000 }
-    ];
-    localStorage.setItem('raspa_prizes_db', JSON.stringify(prizesDB));
-  }
-
-  if (!cardConfigDB || typeof cardConfigDB !== 'object') {
-    cardConfigDB = {
-      title: 'RASPA BONO',
-      subtitle: 'MILLONARIO ORIGINAL',
-      maxPrizeText: 'GANA HASTA 5.000.000 GS',
-      price: 5000,
-      winRate: 45
-    };
-    localStorage.setItem('raspa_card_config', JSON.stringify(cardConfigDB));
+    console.error("Error al conectar con Firebase:", e);
+    showToast("Error de conexión con la nube", "error");
   }
 }
 
-// LOGIN ADMIN (SOLO CONTRASEÑA)
+// GUARDAR TODO EN FIREBASE
+async function saveToCloud() {
+  try {
+    await db.collection("sistema").doc("datos_globales").set({
+      users: usersDB,
+      withdrawals: withdrawalsDB,
+      prizes: prizesDB,
+      cardConfig: cardConfigDB,
+      adminPass: adminPassword
+    });
+  } catch (e) {
+    console.error("Error al guardar en Firebase:", e);
+    showToast("Error al guardar cambios en la nube", "error");
+  }
+}
+
+function getDefaultPrizes() {
+  return [
+    { id: 'p1', name: 'Imán de la Suerte', type: 'icon', val: 'fa-magnet', color: 'text-red-500', prize: 300000 },
+    { id: 'p2', name: 'Sombrero Mágico', type: 'icon', val: 'fa-hat-wizard', color: 'text-purple-600', prize: 50000 },
+    { id: 'p3', name: 'Paraguas Dorado', type: 'icon', val: 'fa-umbrella', color: 'text-indigo-500', prize: 3000000 },
+    { id: 'p4', name: 'Corona Real', type: 'icon', val: 'fa-crown', color: 'text-amber-500', prize: 100000 },
+    { id: 'p5', name: 'Auto Deportivo', type: 'emoji', val: '🏎️', color: '', prize: 20000000 },
+    { id: 'p6', name: 'Bolsa de Billetes', type: 'icon', val: 'fa-money-bill-wave', color: 'text-green-600', prize: 20000 }
+  ];
+}
+
+function getDefaultCardConfig() {
+  return {
+    title: 'RASPA BONO',
+    subtitle: 'MILLONARIO ORIGINAL',
+    maxPrizeText: 'GANA HASTA 5.000.000 GS',
+    price: 5000,
+    winRate: 45
+  };
+}
+
+// LOGIN ADMIN
 function handleAdminLogin(e) {
   e.preventDefault();
   const pass = document.getElementById('admin-pass').value;
@@ -475,8 +517,8 @@ function adminLogout() {
   document.getElementById('view-login').classList.remove('hidden');
 }
 
-function checkAdminAuth() {
-  initDB();
+async function checkAdminAuth() {
+  await initDB();
   if (sessionStorage.getItem('admin_logged') === 'true') {
     showDashboard();
   }
@@ -505,13 +547,13 @@ function closeChangePasswordModal() {
   document.getElementById('modal-password').classList.remove('flex');
 }
 
-function handleChangePassword(e) {
+async function handleChangePassword(e) {
   e.preventDefault();
   const newPass = document.getElementById('new-admin-pass').value.trim();
   if (newPass) {
     adminPassword = newPass;
-    localStorage.setItem('raspa_admin_pass', adminPassword);
-    showToast('Contraseña actualizada correctamente');
+    await saveToCloud();
+    showToast('Contraseña actualizada en la nube');
     closeChangePasswordModal();
     e.target.reset();
   }
@@ -537,8 +579,8 @@ function switchTab(tab) {
   if (tab === 'withdrawals') renderWithdrawalsTable();
 }
 
-// GESTIÓN DE USUARIOS (CON FECHA)
-function handleCreateUser(e) {
+// GESTIÓN DE USUARIOS
+async function handleCreateUser(e) {
   e.preventDefault();
   const name = document.getElementById('new-name').value.trim();
   const username = document.getElementById('new-username').value.trim().toLowerCase();
@@ -566,8 +608,8 @@ function handleCreateUser(e) {
     history: []
   };
 
-  localStorage.setItem('raspa_users_db', JSON.stringify(usersDB));
-  showToast(`Usuario ${name} registrado correctamente`);
+  await saveToCloud();
+  showToast(`Usuario ${name} guardado en Firebase`);
   e.target.reset();
   renderUsersTable();
   renderAgentsTable();
@@ -586,7 +628,6 @@ function renderUsersTable() {
     return;
   }
 
-  // Render PC
   tbody.innerHTML = keys.map(k => {
     const u = usersDB[k];
     const isAgent = u.role === 'agent';
@@ -605,7 +646,6 @@ function renderUsersTable() {
     `;
   }).join('');
 
-  // Render Móviles
   cardsContainer.innerHTML = keys.map(k => {
     const u = usersDB[k];
     const isAgent = u.role === 'agent';
@@ -631,9 +671,8 @@ function renderUsersTable() {
   }).join('');
 }
 
-// LISTA DE AGENTES CON FECHA
+// LISTA DE AGENTES
 function renderAgentsTable() {
-  initDB();
   const tbody = document.getElementById('table-agents-body');
   const cardsContainer = document.getElementById('cards-agents-body');
   if (!tbody || !cardsContainer) return;
@@ -646,7 +685,6 @@ function renderAgentsTable() {
     return;
   }
 
-  // Render PC
   tbody.innerHTML = agentKeys.map(k => {
     const a = usersDB[k];
     return `
@@ -662,7 +700,6 @@ function renderAgentsTable() {
     `;
   }).join('');
 
-  // Render Móvil
   cardsContainer.innerHTML = agentKeys.map(k => {
     const a = usersDB[k];
     return `
@@ -687,7 +724,6 @@ function renderAgentsTable() {
 
 // HISTORIAL DE AGENTES
 function renderAgentHistoryTable() {
-  initDB();
   const tbody = document.getElementById('table-agent-history-body');
   const cardsContainer = document.getElementById('cards-agent-history-body');
   if (!tbody || !cardsContainer) return;
@@ -700,7 +736,6 @@ function renderAgentHistoryTable() {
     return;
   }
 
-  // Render PC
   tbody.innerHTML = agentWithdrawals.map(w => {
     const agentName = usersDB[w.agent] ? usersDB[w.agent].name + ' (@' + w.agent + ')' : w.agent;
     return `
@@ -714,7 +749,6 @@ function renderAgentHistoryTable() {
     `;
   }).join('');
 
-  // Render Móvil
   cardsContainer.innerHTML = agentWithdrawals.map(w => {
     const agentName = usersDB[w.agent] ? usersDB[w.agent].name + ' (@' + w.agent + ')' : w.agent;
     return `
@@ -735,19 +769,19 @@ function renderAgentHistoryTable() {
   }).join('');
 }
 
-function addTickets(username) {
+async function addTickets(username) {
   if (!usersDB[username]) return;
   const count = prompt(`Cantidad de cartones a agregar a ${usersDB[username].name}:`, "5");
   if (count && !isNaN(count)) {
     usersDB[username].tickets = (usersDB[username].tickets || 0) + parseInt(count);
-    localStorage.setItem('raspa_users_db', JSON.stringify(usersDB));
+    await saveToCloud();
     showToast(`Cartones asignados correctamente`);
     renderUsersTable();
     renderAgentsTable();
   }
 }
 
-// VALIDACIÓN DE SALDO EN TIEMPO REAL
+// VALIDACIÓN DE SALDO
 function checkUserBalancePreview(val) {
   const preview = document.getElementById('user-balance-preview');
   const cleanUser = val.trim().toLowerCase();
@@ -768,10 +802,9 @@ function checkUserBalancePreview(val) {
   }
 }
 
-// RETIRAR PREMIO DIRECTO COMO ADMIN (SIN SOLICITAR, SÓLO SI HAY SALDO)
-function handleAdminDirectWithdrawal(e) {
+// RETIRO DIRECTO ADMIN
+async function handleAdminDirectWithdrawal(e) {
   e.preventDefault();
-  initDB();
 
   const username = document.getElementById('w-input-user').value.trim().toLowerCase();
   const amountInput = document.getElementById('w-input-amount').value;
@@ -796,7 +829,6 @@ function handleAdminDirectWithdrawal(e) {
     return;
   }
 
-  // Descontar saldo automáticamente
   usersDB[username].balance -= amount;
 
   const newWithdrawal = {
@@ -809,10 +841,9 @@ function handleAdminDirectWithdrawal(e) {
   };
 
   withdrawalsDB.unshift(newWithdrawal);
-  localStorage.setItem('raspa_users_db', JSON.stringify(usersDB));
-  localStorage.setItem('raspa_withdrawals_db', JSON.stringify(withdrawalsDB));
+  await saveToCloud();
   
-  showToast('Premio retirado y saldo descontado con éxito');
+  showToast('Premio retirado y guardado en Firebase');
   e.target.reset();
   document.getElementById('user-balance-preview').innerText = "Ingresa un usuario válido";
   document.getElementById('user-balance-preview').className = "text-[10px] text-slate-500 block font-bold mt-0.5";
@@ -823,7 +854,6 @@ function handleAdminDirectWithdrawal(e) {
 }
 
 function renderWithdrawalsTable() {
-  initDB();
   const tbody = document.getElementById('table-withdrawals-body');
   const cardsContainer = document.getElementById('cards-withdrawals-body');
   if (!tbody || !cardsContainer) return;
@@ -834,7 +864,6 @@ function renderWithdrawalsTable() {
     return;
   }
 
-  // Render PC
   tbody.innerHTML = withdrawalsDB.map((w, idx) => `
     <tr class="hover:bg-slate-900/40 transition">
       <td class="p-3 font-bold text-white">${w.username}<br><span class="text-[10px] text-slate-400">${w.date}</span></td>
@@ -850,7 +879,6 @@ function renderWithdrawalsTable() {
     </tr>
   `).join('');
 
-  // Render Móviles
   cardsContainer.innerHTML = withdrawalsDB.map((w, idx) => `
     <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex flex-col gap-2 shadow-sm">
       <div class="flex justify-between items-start">
@@ -874,7 +902,7 @@ function renderWithdrawalsTable() {
   `).join('');
 }
 
-function processWithdrawal(idx, newStatus) {
+async function processWithdrawal(idx, newStatus) {
   if (!withdrawalsDB[idx]) return;
   const w = withdrawalsDB[idx];
 
@@ -882,12 +910,11 @@ function processWithdrawal(idx, newStatus) {
     const cleanUser = w.username.toLowerCase();
     if (usersDB[cleanUser]) {
       usersDB[cleanUser].balance = (usersDB[cleanUser].balance || 0) + w.amount;
-      localStorage.setItem('raspa_users_db', JSON.stringify(usersDB));
     }
   }
 
   withdrawalsDB[idx].status = newStatus;
-  localStorage.setItem('raspa_withdrawals_db', JSON.stringify(withdrawalsDB));
+  await saveToCloud();
   showToast(`Solicitud ${newStatus.toLowerCase()}`);
   renderWithdrawalsTable();
   renderUsersTable();
@@ -900,12 +927,12 @@ function togglePrizeTypeInput() {
   if (!typeEl || !inputVal) return;
   
   const type = typeEl.value;
-  if (type === 'emoji') inputVal.placeholder = "Tu emoji acá";
+  if (type === 'emoji') inputVal.placeholder = "🏎️ / 💎 / 🏆";
   else if (type === 'icon') inputVal.placeholder = "fa-gem / fa-crown";
   else inputVal.placeholder = "https://ejemplo.com/imagen.png";
 }
 
-function handleSavePrize(e) {
+async function handleSavePrize(e) {
   e.preventDefault();
   const idx = parseInt(document.getElementById('prize-index-edit').value);
   const name = document.getElementById('prize-name').value.trim();
@@ -925,8 +952,8 @@ function handleSavePrize(e) {
   if (idx >= 0 && prizesDB[idx]) prizesDB[idx] = itemData;
   else prizesDB.push(itemData);
 
-  localStorage.setItem('raspa_prizes_db', JSON.stringify(prizesDB));
-  showToast('Premio guardado');
+  await saveToCloud();
+  showToast('Premio guardado en Firebase');
   resetPrizeForm();
   renderPrizesConfig();
 }
@@ -987,10 +1014,10 @@ function editPrize(i) {
   document.getElementById('prize-form-title').innerText = `Editando: ${p.name}`;
 }
 
-function deletePrize(i) {
+async function deletePrize(i) {
   if (confirm('¿Eliminar este premio?')) {
     prizesDB.splice(i, 1);
-    localStorage.setItem('raspa_prizes_db', JSON.stringify(prizesDB));
+    await saveToCloud();
     renderPrizesConfig();
     showToast('Premio eliminado');
   }
@@ -1011,7 +1038,7 @@ function loadCardConfigForm() {
   if (cfgWinRate) cfgWinRate.value = cardConfigDB.winRate || 45;
 }
 
-function handleSaveCardConfig(e) {
+async function handleSaveCardConfig(e) {
   e.preventDefault();
   cardConfigDB = {
     title: document.getElementById('cfg-title').value.trim(),
@@ -1021,8 +1048,8 @@ function handleSaveCardConfig(e) {
     winRate: parseInt(document.getElementById('cfg-win-rate').value)
   };
 
-  localStorage.setItem('raspa_card_config', JSON.stringify(cardConfigDB));
-  showToast('Configuración del cartón guardada');
+  await saveToCloud();
+  showToast('Configuración guardada en la nube');
 }
 
 function showToast(msg, type = 'success') {

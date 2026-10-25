@@ -7,6 +7,11 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<!-- FIREBASE SDKs (Compat v9) -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
 <style>
 body {
   font-family: 'Poppins', sans-serif;
@@ -91,7 +96,7 @@ body {
         </div>
         <div>
           <h2 class="text-xs sm:text-sm font-black gold-gradient-text tracking-wide uppercase" id="agent-header-name">AGENTE</h2>
-          <span class="text-[9px] sm:text-[10px] text-slate-400 font-medium block">Gestión de Clientes Directos</span>
+          <span class="text-[9px] sm:text-[10px] text-slate-400 font-medium block">Sincronizado con Firebase ☁️</span>
         </div>
       </div>
       <div class="flex items-center gap-2">
@@ -144,7 +149,7 @@ body {
               <input type="password" id="c-pass" required placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-purple-500">
             </div>
             <div class="pt-1">
-              <button type="submit" class="w-full py-3.5 rounded-xl font-black text-slate-950 bg-purple-400 hover:bg-purple-300 transition text-xs shadow-lg uppercase tracking-wider">Registrar Cliente</button>
+              <button type="submit" class="w-full py-3.5 rounded-xl font-black text-slate-950 bg-purple-400 hover:bg-purple-300 transition text-xs shadow-lg uppercase tracking-wider">Registrar Cliente en la Nube</button>
             </div>
           </form>
         </div>
@@ -275,24 +280,57 @@ body {
 </div>
 
 <script>
+// CONFIGURACIÓN DE FIREBASE
+const firebaseConfig = {
+  apiKey: "AIzaSyBVYB9BRSMPR4S6QpogWGnSSqwFCI1-bh8",
+  authDomain: "raspaygana-fdacb.firebaseapp.com",
+  projectId: "raspaygana-fdacb",
+  storageBucket: "raspaygana-fdacb.firebasestorage.app",
+  messagingSenderId: "851746213050",
+  appId: "1:851746213050:web:f27c58c79af81caedb4683"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
 let usersDB = {};
 let withdrawalsDB = [];
 let currentAgent = null;
 
-function initDB() {
+// CARGAR DESDE FIREBASE
+async function initDB() {
   try {
-    usersDB = JSON.parse(localStorage.getItem('raspa_users_db') || '{}');
-    withdrawalsDB = JSON.parse(localStorage.getItem('raspa_withdrawals_db') || '[]');
+    const docRef = db.collection("sistema").doc("datos_globales");
+    const docSnap = await docRef.get();
+
+    if (docSnap.exists) {
+      const data = docSnap.data();
+      usersDB = data.users || {};
+      withdrawalsDB = data.withdrawals || [];
+    }
   } catch (e) {
-    usersDB = {};
-    withdrawalsDB = [];
+    console.error("Error al conectar con Firebase:", e);
+    showToast("Error de conexión con la nube", "error");
+  }
+}
+
+// GUARDAR EN FIREBASE
+async function saveToCloud() {
+  try {
+    await db.collection("sistema").doc("datos_globales").set({
+      users: usersDB,
+      withdrawals: withdrawalsDB
+    }, { merge: true });
+  } catch (e) {
+    console.error("Error al guardar en Firebase:", e);
+    showToast("Error al sincronizar con la nube", "error");
   }
 }
 
 // LOGIN DE AGENTE
-function handleAgentLogin(e) {
+async function handleAgentLogin(e) {
   e.preventDefault();
-  initDB();
+  await initDB();
   
   const username = document.getElementById('agent-user').value.trim().toLowerCase();
   const pass = document.getElementById('agent-pass').value;
@@ -314,8 +352,8 @@ function agentLogout() {
   document.getElementById('view-login').classList.remove('hidden');
 }
 
-function checkAgentAuth() {
-  initDB();
+async function checkAgentAuth() {
+  await initDB();
   const logged = sessionStorage.getItem('agent_logged');
   if (logged && usersDB[logged] && usersDB[logged].role === 'agent') {
     currentAgent = logged;
@@ -353,9 +391,7 @@ function switchTab(tab) {
   if (tab === 'history') renderAgentHistory();
 }
 
-// FILTRAR CLIENTES CREADOS POR ESTE AGENTE
 function getMyClients() {
-  initDB();
   let myClients = {};
   Object.keys(usersDB).forEach(k => {
     const u = usersDB[k];
@@ -366,10 +402,10 @@ function getMyClients() {
   return myClients;
 }
 
-// 1. CREAR JUGADOR / CLIENTE
-function handleCreateClient(e) {
+// 1. CREAR JUGADOR
+async function handleCreateClient(e) {
   e.preventDefault();
-  initDB();
+  await initDB();
 
   const name = document.getElementById('c-name').value.trim();
   const username = document.getElementById('c-username').value.trim().toLowerCase();
@@ -381,6 +417,7 @@ function handleCreateClient(e) {
   }
 
   const userId = 'HLN-' + Math.floor(10000 + Math.random() * 90000);
+  const currentDate = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   usersDB[username] = {
     id: userId,
@@ -391,17 +428,18 @@ function handleCreateClient(e) {
     createdBy: currentAgent,
     balance: 0,
     tickets: 0,
+    createdAt: currentDate,
     history: []
   };
 
-  localStorage.setItem('raspa_users_db', JSON.stringify(usersDB));
-  showToast(`Jugador ${name} creado con éxito`);
+  await saveToCloud();
+  showToast(`Jugador ${name} registrado en la nube`);
   e.target.reset();
   renderClients();
   populateClientSelects();
 }
 
-// 2. VER CLIENTES (SIN MEZCLAR CON OTROS AGENTES)
+// 2. VER CLIENTES
 function renderClients() {
   const tbody = document.getElementById('table-clients-body');
   const cardsContainer = document.getElementById('cards-clients-body');
@@ -416,7 +454,6 @@ function renderClients() {
     return;
   }
 
-  // Vista PC
   tbody.innerHTML = keys.map(k => {
     const u = clients[k];
     return `
@@ -432,7 +469,6 @@ function renderClients() {
     `;
   }).join('');
 
-  // Vista Móviles
   cardsContainer.innerHTML = keys.map(k => {
     const u = clients[k];
     return `
@@ -469,7 +505,6 @@ function populateClientSelects() {
   if (selectT) selectT.innerHTML = optionsHtml;
 }
 
-// 3. RETIRAR PREMIO (DIRECTO, SÓLO SI HAY SALDO)
 function checkClientBalance(username) {
   const infoEl = document.getElementById('client-balance-info');
   if (!username || !usersDB[username]) {
@@ -482,9 +517,10 @@ function checkClientBalance(username) {
   infoEl.className = bal > 0 ? "text-[10px] text-emerald-400 block font-bold mt-1" : "text-[10px] text-red-400 block font-bold mt-1";
 }
 
-function handleAgentWithdrawal(e) {
+// 3. RETIRAR PREMIO
+async function handleAgentWithdrawal(e) {
   e.preventDefault();
-  initDB();
+  await initDB();
 
   const username = document.getElementById('w-client-username').value;
   const amountInput = document.getElementById('w-amount').value;
@@ -509,10 +545,8 @@ function handleAgentWithdrawal(e) {
     return;
   }
 
-  // Descontar saldo automáticamente del cliente
   usersDB[username].balance -= amount;
   
-  // Registrar en historial general de retiros indicando qué agente lo realizó
   withdrawalsDB.unshift({
     agent: currentAgent,
     username: client.name + ' (@' + client.username + ')',
@@ -522,10 +556,9 @@ function handleAgentWithdrawal(e) {
     date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   });
 
-  localStorage.setItem('raspa_users_db', JSON.stringify(usersDB));
-  localStorage.setItem('raspa_withdrawals_db', JSON.stringify(withdrawalsDB));
+  await saveToCloud();
 
-  showToast(`¡Retiro procesado con éxito! Se descontaron ${amount.toLocaleString('es-PY')} GS`);
+  showToast(`¡Retiro procesado! Se descontaron ${amount.toLocaleString('es-PY')} GS`);
   e.target.reset();
   document.getElementById('client-balance-info').innerText = "Saldo disponible: 0 GS";
   populateClientSelects();
@@ -533,14 +566,12 @@ function handleAgentWithdrawal(e) {
   renderAgentHistory();
 }
 
-// 4. HISTORIAL DE RETIROS DEL AGENTE
+// 4. HISTORIAL DE RETIROS
 function renderAgentHistory() {
-  initDB();
   const tbody = document.getElementById('table-history-body');
   const cardsContainer = document.getElementById('cards-history-body');
   if (!tbody || !cardsContainer) return;
 
-  // Filtrar retiros realizados por este agente
   const myWithdrawals = withdrawalsDB.filter(w => w.agent === currentAgent);
 
   if (myWithdrawals.length === 0) {
@@ -549,7 +580,6 @@ function renderAgentHistory() {
     return;
   }
 
-  // Vista PC
   tbody.innerHTML = myWithdrawals.map(w => `
     <tr class="hover:bg-slate-900/40 transition">
       <td class="p-3 font-bold text-white">${w.username}</td>
@@ -560,7 +590,6 @@ function renderAgentHistory() {
     </tr>
   `).join('');
 
-  // Vista Celulares
   cardsContainer.innerHTML = myWithdrawals.map(w => `
     <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex flex-col gap-2 shadow-sm">
       <div class="flex justify-between items-start">
@@ -577,9 +606,9 @@ function renderAgentHistory() {
 }
 
 // 5. CARGAR CARTÓN
-function handleAgentAddTickets(e) {
+async function handleAgentAddTickets(e) {
   e.preventDefault();
-  initDB();
+  await initDB();
 
   const username = document.getElementById('t-client-username').value;
   const qtyInput = document.getElementById('t-quantity').value;
@@ -596,7 +625,7 @@ function handleAgentAddTickets(e) {
   }
 
   usersDB[username].tickets = (usersDB[username].tickets || 0) + qty;
-  localStorage.setItem('raspa_users_db', JSON.stringify(usersDB));
+  await saveToCloud();
 
   showToast(`Se acreditaron ${qty} cartones a ${usersDB[username].name}`);
   e.target.reset();
@@ -604,11 +633,11 @@ function handleAgentAddTickets(e) {
   populateClientSelects();
 }
 
-function quickAddTickets(username) {
+async function quickAddTickets(username) {
   const count = prompt(`Cantidad de cartones a cargar a ${usersDB[username].name}:`, "5");
   if (count && !isNaN(count) && parseInt(count) > 0) {
     usersDB[username].tickets = (usersDB[username].tickets || 0) + parseInt(count);
-    localStorage.setItem('raspa_users_db', JSON.stringify(usersDB));
+    await saveToCloud();
     showToast(`¡Cartones cargados con éxito!`);
     renderClients();
   }

@@ -8,6 +8,11 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/js-confetti@latest/dist/js-confetti.browser.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+<!-- FIREBASE SDKs (Compat v9) -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
 <style>
 body {
   font-family: 'Poppins', sans-serif;
@@ -124,13 +129,12 @@ body {
   <div id="view-auth" class="p-6 flex flex-col gap-5">
     <div class="text-center my-2">
       <h1 class="text-3xl font-black italic gold-gradient-text" id="login-brand-title">RASPA BONO</h1>
-      <p class="text-xs text-amber-300 font-bold mt-1">Plataforma de Raspaditas</p>
+      <p class="text-xs text-amber-300 font-bold mt-1">Plataforma de Raspaditas (Nube)</p>
     </div>
 
-    <!-- ENCABEZADO LOGIN -->
     <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-center text-xs font-bold text-amber-400 flex items-center justify-center gap-2">
-      <i class="fa-solid fa-lock"></i>
-      <span>Acceso a Clientes Registrados</span>
+      <i class="fa-solid fa-cloud"></i>
+      <span>Sincronizado con Firebase ☁️</span>
     </div>
 
     <!-- FORMULARIO LOGIN -->
@@ -297,16 +301,61 @@ body {
 </div>
 
 <script>
-// BASE DE DATOS LOCAL
-let usersDB = JSON.parse(localStorage.getItem('raspa_users_db') || '{}');
-let currentUser = localStorage.getItem('raspa_logged_user') || null;
+// CONFIGURACIÓN DE FIREBASE
+const firebaseConfig = {
+  apiKey: "AIzaSyBVYB9BRSMPR4S6QpogWGnSSqwFCI1-bh8",
+  authDomain: "raspaygana-fdacb.firebaseapp.com",
+  projectId: "raspaygana-fdacb",
+  storageBucket: "raspaygana-fdacb.firebasestorage.app",
+  messagingSenderId: "851746213050",
+  appId: "1:851746213050:web:f27c58c79af81caedb4683"
+};
 
-function handleLogin(e) {
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// VARIABLES GLOBALES
+let usersDB = {};
+let prizesDB = [];
+let cardConfigDB = {};
+let currentUser = sessionStorage.getItem('raspa_logged_user') || null;
+
+// CARGAR DATOS DESDE FIREBASE
+async function initDB() {
+  try {
+    const docRef = db.collection("sistema").doc("datos_globales");
+    const docSnap = await docRef.get();
+
+    if (docSnap.exists) {
+      const data = docSnap.data();
+      usersDB = data.users || {};
+      prizesDB = data.prizes || [];
+      cardConfigDB = data.cardConfig || {};
+    }
+  } catch (e) {
+    console.error("Error al conectar con Firebase:", e);
+    showToast("Error de conexión con la nube", "error");
+  }
+}
+
+// GUARDAR DATOS EN FIREBASE
+async function saveToCloud() {
+  try {
+    await db.collection("sistema").doc("datos_globales").set({
+      users: usersDB
+    }, { merge: true });
+  } catch (e) {
+    console.error("Error al guardar en Firebase:", e);
+    showToast("Error al sincronizar con la nube", "error");
+  }
+}
+
+async function handleLogin(e) {
   e.preventDefault();
+  await initDB();
+
   const username = document.getElementById('login-username').value.trim().toLowerCase();
   const pass = document.getElementById('login-password').value;
-
-  usersDB = JSON.parse(localStorage.getItem('raspa_users_db') || '{}');
 
   if (!usersDB[username] || usersDB[username].password !== pass) {
     showToast('Usuario o contraseña incorrectos', 'error');
@@ -314,19 +363,19 @@ function handleLogin(e) {
   }
 
   currentUser = username;
-  localStorage.setItem('raspa_logged_user', currentUser);
+  sessionStorage.setItem('raspa_logged_user', currentUser);
   showToast('Bienvenido/a de nuevo');
   checkSession();
 }
 
 function logout() {
   currentUser = null;
-  localStorage.removeItem('raspa_logged_user');
+  sessionStorage.removeItem('raspa_logged_user');
   checkSession();
 }
 
-function checkSession() {
-  usersDB = JSON.parse(localStorage.getItem('raspa_users_db') || '{}');
+async function checkSession() {
+  await initDB();
   if (currentUser && usersDB[currentUser]) {
     document.getElementById('view-auth').classList.add('hidden');
     document.getElementById('view-dashboard').classList.remove('hidden');
@@ -339,8 +388,8 @@ function checkSession() {
   }
 }
 
-function saveUserData() {
-  localStorage.setItem('raspa_users_db', JSON.stringify(usersDB));
+async function saveUserData() {
+  await saveToCloud();
   updateDashboardUI();
 }
 
@@ -374,7 +423,7 @@ function updateDashboardUI() {
   }
 }
 
-// FUNCIÓN DE COPIADO COMPATIBLE UNIVERSALMENTE SOLO PARA EL USUARIO
+// COPIAR USUARIO
 function copyToClipboard(text, label) {
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(() => {
@@ -423,7 +472,8 @@ function showToast(msg, type = 'success') {
 }
 
 // NAVEGACIÓN
-function goToGame() {
+async function goToGame() {
+  await initDB();
   if (!usersDB[currentUser].tickets || usersDB[currentUser].tickets <= 0) {
     showToast('No tienes cartones disponibles.', 'error');
     return;
@@ -476,22 +526,19 @@ function initCanvas() {
 }
 
 function generateCardData() {
-  const customPrizes = JSON.parse(localStorage.getItem('raspa_prizes_db') || 'null');
-  const cardConfig = JSON.parse(localStorage.getItem('raspa_card_config') || 'null');
-
-  let ITEMS = customPrizes && customPrizes.length > 0 ? customPrizes : [
+  let ITEMS = prizesDB && prizesDB.length > 0 ? prizesDB : [
     { id: 'magnet', name: 'Imán', type: 'icon', val: 'fa-magnet', color: 'text-red-500', prize: 300000 },
     { id: 'hat', name: 'Sombrero', type: 'icon', val: 'fa-hat-wizard', color: 'text-purple-600', prize: 50000 }
   ];
 
-  if (cardConfig) {
-    document.getElementById('card-display-title').innerText = cardConfig.title || 'RASPA BONO';
-    document.getElementById('card-display-subtitle').innerText = cardConfig.subtitle || 'MILLONARIO ORIGINAL';
-    document.getElementById('card-display-max').innerText = cardConfig.maxPrizeText || 'GANA HASTA 5.000.000 GS';
-    document.getElementById('card-price-badge').innerText = (cardConfig.price || 5000).toLocaleString('es-PY');
+  if (cardConfigDB && Object.keys(cardConfigDB).length > 0) {
+    document.getElementById('card-display-title').innerText = cardConfigDB.title || 'RASPA BONO';
+    document.getElementById('card-display-subtitle').innerText = cardConfigDB.subtitle || 'MILLONARIO ORIGINAL';
+    document.getElementById('card-display-max').innerText = cardConfigDB.maxPrizeText || 'GANA HASTA 5.000.000 GS';
+    document.getElementById('card-price-badge').innerText = (cardConfigDB.price || 5000).toLocaleString('es-PY');
   }
 
-  const winRate = cardConfig && cardConfig.winRate ? cardConfig.winRate / 100 : 0.45;
+  const winRate = cardConfigDB && cardConfigDB.winRate ? cardConfigDB.winRate / 100 : 0.45;
 
   gridData = [];
   const isWinner = Math.random() < winRate;
@@ -728,7 +775,8 @@ function resetGame() {
   initCanvas();
 }
 
-function nextCard() {
+async function nextCard() {
+  await initDB();
   if (!usersDB[currentUser].tickets || usersDB[currentUser].tickets <= 0) {
     showToast('No tienes más cartones. Volviendo al perfil...', 'error');
     setTimeout(goToDashboard, 1500);
