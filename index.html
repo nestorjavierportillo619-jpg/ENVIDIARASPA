@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Plataforma de Raspaditas - Iniciar Sesión y Juego</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/js-confetti@latest/dist/js-confetti.browser.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+body {
+  font-family: 'Poppins', sans-serif;
+  background: #090d14;
+  background-image: radial-gradient(circle at 50% 15%, #3b0764 0%, #090d14 85%);
+  min-height: 100vh;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  color: #f8fafc;
+}
+.gold-gradient-text {
+  background: linear-gradient(135deg, #FFF5C0 0%, #F1C40F 40%, #E67E22 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.gold-card-border {
+  border: 3px solid #f59e0b;
+  box-shadow: 0 0 25px rgba(245, 158, 11, 0.4), inset 0 0 15px rgba(245, 158, 11, 0.25);
+}
+.scratch-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  height: 320px;
+  margin: 0 auto;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.8);
+  border: 2px solid #b45309;
+  touch-action: none;
+}
+#scratch-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 20;
+  cursor: crosshair;
+  touch-action: none;
+}
+.game-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 8px;
+  padding: 10px;
+  background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+  z-index: 10;
+}
+.grid-cell {
+  background: #fff;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #e2e8f0;
+  transition: all 0.3s;
+}
+.grid-cell.matched {
+  border-color: #f59e0b;
+  background: linear-gradient(135deg, #fef9c3 0%, #fef08a 100%);
+  animation: match-pulse 0.8s infinite alternate;
+}
+@keyframes match-pulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.06); box-shadow: 0 0 20px #f59e0b; }
+}
+.btn-orange {
+  background: linear-gradient(180deg, #fb923c 0%, #ea580c 50%, #c2410c 100%);
+}
+.scratch-progress-fill {
+  transition: width 0.2s ease-out;
+}
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer::after {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  content: "";
+  background: linear-gradient(60deg, rgba(255,255,255,0) 20%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0) 80%);
+  transform: rotate(30deg);
+  animation: shimmerEffect 4s infinite;
+}
+@keyframes shimmerEffect {
+  0% { transform: translateX(-100%) rotate(30deg); }
+  100% { transform: translateX(100%) rotate(30deg); }
+}
+</style>
+</head>
+<body class="flex items-center justify-center p-2 min-h-screen">
+
+<div class="w-full max-w-md bg-slate-900/95 rounded-3xl overflow-hidden shadow-2xl border border-slate-800 flex flex-col my-auto">
+  
+  <!-- ALERTA TOAST -->
+  <div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 bg-emerald-500 text-slate-950 px-4 py-2 rounded-full text-xs font-black shadow-2xl opacity-0 pointer-events-none transition-all duration-300 z-50 flex items-center gap-2">
+    <i class="fa-solid fa-circle-check"></i>
+    <span id="toast-msg">Mensaje</span>
+  </div>
+
+  <!-- VISTA 0: INICIO DE SESIÓN ÚNICO -->
+  <div id="view-auth" class="p-6 flex flex-col gap-5">
+    <div class="text-center my-2">
+      <h1 class="text-3xl font-black italic gold-gradient-text" id="login-brand-title">RASPA BONO</h1>
+      <p class="text-xs text-amber-300 font-bold mt-1">Plataforma de Raspaditas</p>
+    </div>
+
+    <!-- ENCABEZADO LOGIN -->
+    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-center text-xs font-bold text-amber-400 flex items-center justify-center gap-2">
+      <i class="fa-solid fa-lock"></i>
+      <span>Acceso a Clientes Registrados</span>
+    </div>
+
+    <!-- FORMULARIO LOGIN -->
+    <form id="form-login" onsubmit="handleLogin(event)" class="flex flex-col gap-3">
+      <div>
+        <label class="block text-[11px] font-bold text-slate-400 mb-1">Usuario</label>
+        <div class="relative">
+          <i class="fa-solid fa-user absolute left-3 top-3 text-slate-500 text-xs"></i>
+          <input type="text" id="login-username" required placeholder="Ingresa tu usuario" class="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 pl-9 pr-3 text-xs text-white focus:outline-none focus:border-amber-500">
+        </div>
+      </div>
+      <div>
+        <label class="block text-[11px] font-bold text-slate-400 mb-1">Contraseña</label>
+        <div class="relative">
+          <i class="fa-solid fa-lock absolute left-3 top-3 text-slate-500 text-xs"></i>
+          <input type="password" id="login-password" required placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 pl-9 pr-3 text-xs text-white focus:outline-none focus:border-amber-500">
+        </div>
+      </div>
+      <button type="submit" class="w-full mt-2 py-3.5 rounded-xl font-extrabold text-white btn-orange shadow-md active:scale-[0.98] transition">Ingresar</button>
+    </form>
+
+    <div class="text-center text-[10px] text-slate-500 mt-2">
+      <i class="fa-solid fa-circle-info mr-1"></i> Si no tienes cuenta, solicita una a tu Agente o Administrador.
+    </div>
+  </div>
+
+  <!-- VISTA 1: DASHBOARD DE USUARIO -->
+  <div id="view-dashboard" class="hidden p-5 flex-col gap-5">
+    
+    <!-- Encabezado de Usuario -->
+    <div class="flex items-center justify-between bg-slate-950/80 p-4 rounded-2xl border border-slate-800">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-amber-500 to-purple-600 flex items-center justify-center text-white text-xl font-black shadow-lg">
+          <i class="fa-solid fa-user"></i>
+        </div>
+        <div>
+          <div class="text-sm font-black text-white flex items-center gap-2">
+            <span id="dash-username">Usuario</span>
+            <button onclick="copyUsername()" class="text-slate-400 hover:text-amber-400 text-xs transition" title="Copiar usuario">
+              <i class="fa-regular fa-copy"></i>
+            </button>
+          </div>
+          <div class="flex items-center gap-1.5 text-xs text-slate-400 font-mono mt-0.5">
+            <span>ID:</span>
+            <span id="user-id-val" class="font-bold text-amber-400">HLN-88421</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <button onclick="logout()" class="bg-red-950/60 hover:bg-red-900 text-red-300 text-xs p-2.5 rounded-xl border border-red-800 transition active:scale-95" title="Cerrar Sesión">
+          <i class="fa-solid fa-right-from-bracket"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Tarjetas de Saldo y Cartones -->
+    <div class="grid grid-cols-2 gap-3">
+      <!-- Saldo de Ganancias -->
+      <div class="bg-gradient-to-br from-amber-950/40 via-slate-900 to-slate-950 p-4 rounded-2xl border border-amber-500/30 flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-400 text-xs font-bold mb-2">
+          <span>GANANCIAS</span>
+          <i class="fa-solid fa-sack-dollar text-amber-400 text-base"></i>
+        </div>
+        <div>
+          <div id="dash-balance" class="text-xl font-black gold-gradient-text">0 GS</div>
+          <div class="text-[10px] text-slate-400 mt-1">Saldo disponible</div>
+        </div>
+      </div>
+
+      <!-- Cartones Disponibles -->
+      <div class="bg-gradient-to-br from-purple-950/40 via-slate-900 to-slate-950 p-4 rounded-2xl border border-purple-500/30 flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-400 text-xs font-bold mb-2">
+          <span>CARTONES</span>
+          <i class="fa-solid fa-ticket text-purple-400 text-base"></i>
+        </div>
+        <div>
+          <div id="dash-tickets" class="text-2xl font-black text-purple-300">0</div>
+          <div class="text-[10px] text-slate-400 mt-1">Para jugar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botón Principal: Ir a Jugar -->
+    <button onclick="goToGame()" class="w-full py-4 rounded-2xl font-black text-white text-base btn-orange shadow-lg hover:brightness-110 active:scale-[0.98] transition flex items-center justify-center gap-2">
+      <i class="fa-solid fa-gamepad text-xl"></i>
+      <span>IR A RASPAR CARTÓN</span>
+    </button>
+
+    <!-- Historial de Jugadas Recientes -->
+    <div class="bg-slate-950/60 rounded-2xl p-4 border border-slate-800">
+      <div class="text-xs font-bold text-slate-400 mb-3 flex justify-between items-center">
+        <span>HISTORIAL DE JUGADAS</span>
+        <i class="fa-solid fa-clock-rotate-left"></i>
+      </div>
+      <div id="history-list" class="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1"></div>
+    </div>
+
+  </div>
+
+  <!-- VISTA 2: JUEGO DE RASPADITA -->
+  <div id="view-game" class="hidden flex-col">
+    <div class="px-4 py-3 bg-slate-950/80 flex justify-between items-center text-white text-xs font-semibold border-b border-slate-800">
+      <div>
+        <span class="text-purple-300 block text-xs font-bold">Cartón <span id="carton-num">1</span> • <span id="carton-code">4777</span></span>
+        <span class="text-slate-400 text-[10px]" id="serie-code-top">SERIE A3606</span>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="goToDashboard()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3.5 py-1.5 rounded-full border border-slate-700 text-[11px] transition flex items-center gap-1.5">
+          <i class="fa-solid fa-arrow-left"></i> Volver al Perfil
+        </button>
+      </div>
+    </div>
+
+    <div class="p-4 flex-1 flex flex-col items-center gap-4">
+      <div class="w-full bg-gradient-to-b from-emerald-900 via-purple-950 to-slate-950 p-4 rounded-2xl gold-card-border relative shimmer">
+        <div class="absolute top-2.5 left-2.5 bg-blue-600 text-white font-black text-[10px] px-2.5 py-1 rounded-lg border border-blue-300 text-center leading-tight">PRECIO<br><span id="card-price-badge">5.000</span> GS</div>
+        <div class="absolute top-2.5 right-2.5 bg-purple-600 text-white font-extrabold text-[11px] px-2.5 py-0.5 rounded-full border border-purple-300">+18</div>
+        
+        <div class="text-center mt-3 mb-2">
+          <h1 class="text-3xl font-black italic gold-gradient-text leading-tight" id="card-display-title">RASPA BONO</h1>
+          <div class="text-[11px] text-amber-300 font-extrabold" id="card-display-subtitle">MILLONARIO ORIGINAL</div>
+          <div class="inline-block bg-amber-400 text-slate-950 font-black text-[11px] px-3 py-0.5 rounded-full mt-1" id="card-display-max">GANA HASTA 5.000.000 GS</div>
+        </div>
+        
+        <div class="bg-gradient-to-r from-orange-600 via-amber-500 to-orange-600 text-white text-center text-[11px] font-extrabold py-1.5 rounded-lg mb-3 shadow">
+          ENCUENTRA 3 FIGURAS IGUALES
+        </div>
+
+        <div class="scratch-wrapper">
+          <div class="game-grid" id="grid"></div>
+          <canvas id="scratch-canvas"></canvas>
+        </div>
+
+        <div class="w-full bg-slate-950/80 rounded-full h-2.5 mt-3 overflow-hidden border border-slate-700/80 p-0.5">
+          <div id="scratch-progress" class="bg-gradient-to-r from-amber-500 via-emerald-400 to-amber-300 h-full rounded-full scratch-progress-fill w-0"></div>
+        </div>
+        <div class="flex justify-between text-[10px] text-slate-300 mt-1 font-semibold">
+          <span>Avance de raspe:</span>
+          <span id="progress-text" class="text-amber-400 font-bold">0%</span>
+        </div>
+      </div>
+
+      <div id="result-card" class="w-full bg-slate-900 border border-amber-500/30 rounded-2xl p-4 text-center shadow-lg">
+        <div id="result-status-title" class="text-xl font-black text-amber-100/60 my-1">Raspa el cartón...</div>
+        <div id="result-prize" class="text-3xl font-black text-slate-500 my-1">? ? ? GS</div>
+        <div id="badge-container" class="inline-flex items-center gap-1.5 bg-slate-800 text-slate-300 text-[11px] font-bold px-3.5 py-1.5 rounded-full my-2 border border-slate-700">
+          <i class="fa-solid fa-hourglass-half text-amber-400" id="badge-icon"></i>
+          <span id="payment-status">PENDIENTE DE RASPE</span>
+        </div>
+        
+        <div class="bg-amber-50 text-slate-900 p-3 rounded-xl my-3 flex justify-between items-center shadow-inner">
+          <div class="text-left">
+            <div class="text-[10px] font-black text-slate-500">NÚMERO DE CARTÓN</div>
+            <div id="card-big-number" class="text-2xl font-black">4777</div>
+          </div>
+          <div id="card-big-serie" class="text-xs font-black bg-amber-200/80 px-3 py-1.5 rounded-lg border border-amber-300">SERIE A3606</div>
+        </div>
+        
+        <button onclick="nextCard()" class="w-full py-3.5 rounded-xl font-extrabold text-white btn-orange shadow-md hover:brightness-110 active:scale-[0.98] transition">➡️ Siguiente cartón</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// BASE DE DATOS LOCAL
+let usersDB = JSON.parse(localStorage.getItem('raspa_users_db') || '{}');
+let currentUser = localStorage.getItem('raspa_logged_user') || null;
+
+function handleLogin(e) {
+  e.preventDefault();
+  const username = document.getElementById('login-username').value.trim().toLowerCase();
+  const pass = document.getElementById('login-password').value;
+
+  usersDB = JSON.parse(localStorage.getItem('raspa_users_db') || '{}');
+
+  if (!usersDB[username] || usersDB[username].password !== pass) {
+    showToast('Usuario o contraseña incorrectos', 'error');
+    return;
+  }
+
+  currentUser = username;
+  localStorage.setItem('raspa_logged_user', currentUser);
+  showToast('Bienvenido/a de nuevo');
+  checkSession();
+}
+
+function logout() {
+  currentUser = null;
+  localStorage.removeItem('raspa_logged_user');
+  checkSession();
+}
+
+function checkSession() {
+  usersDB = JSON.parse(localStorage.getItem('raspa_users_db') || '{}');
+  if (currentUser && usersDB[currentUser]) {
+    document.getElementById('view-auth').classList.add('hidden');
+    document.getElementById('view-dashboard').classList.remove('hidden');
+    document.getElementById('view-dashboard').classList.add('flex');
+    updateDashboardUI();
+  } else {
+    document.getElementById('view-auth').classList.remove('hidden');
+    document.getElementById('view-dashboard').classList.add('hidden');
+    document.getElementById('view-game').classList.add('hidden');
+  }
+}
+
+function saveUserData() {
+  localStorage.setItem('raspa_users_db', JSON.stringify(usersDB));
+  updateDashboardUI();
+}
+
+function updateDashboardUI() {
+  if (!currentUser || !usersDB[currentUser]) return;
+  const data = usersDB[currentUser];
+
+  document.getElementById('dash-username').innerText = data.username || data.name;
+  document.getElementById('user-id-val').innerText = data.id || 'N/A';
+  document.getElementById('dash-balance').innerText = (data.balance || 0).toLocaleString('es-PY') + ' GS';
+  document.getElementById('dash-tickets').innerText = data.tickets || 0;
+
+  const historyContainer = document.getElementById('history-list');
+  if (!data.history || data.history.length === 0) {
+    historyContainer.innerHTML = `<div class="text-center text-slate-500 text-xs py-3">Aún no has jugado ningún cartón.</div>`;
+  } else {
+    historyContainer.innerHTML = data.history.map(item => `
+      <div class="flex items-center justify-between bg-slate-900 p-2.5 rounded-xl border border-slate-800/80 text-xs">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid ${item.win ? 'fa-trophy text-amber-400' : 'fa-circle-xmark text-slate-500'}"></i>
+          <div>
+            <div class="font-bold text-slate-200">Cartón #${item.code} (${item.serie})</div>
+            <div class="text-[10px] text-slate-400">${item.date}</div>
+          </div>
+        </div>
+        <div class="font-black ${item.win ? 'text-amber-400' : 'text-slate-500'}">
+          ${item.win ? '+' + item.prize.toLocaleString('es-PY') + ' GS' : 'SIN PREMIO'}
+        </div>
+      </div>
+    `).join('');
+  }
+}
+
+// FUNCIÓN DE COPIADO COMPATIBLE UNIVERSALMENTE SOLO PARA EL USUARIO
+function copyToClipboard(text, label) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast(label + ' copiado: ' + text);
+    }).catch(() => {
+      fallbackCopyText(text, label);
+    });
+  } else {
+    fallbackCopyText(text, label);
+  }
+}
+
+function fallbackCopyText(text, label) {
+  const el = document.createElement('textarea');
+  el.value = text;
+  el.style.position = 'fixed';
+  document.body.appendChild(el);
+  el.focus();
+  el.select();
+  try {
+    const successful = document.execCommand('copy');
+    if (successful) {
+      showToast(label + ' copiado: ' + text);
+    } else {
+      showToast('No se pudo copiar', 'error');
+    }
+  } catch (err) {
+    showToast('Error al copiar', 'error');
+  }
+  document.body.removeChild(el);
+}
+
+function copyUsername() {
+  const username = usersDB[currentUser].username;
+  copyToClipboard(username, 'Usuario');
+}
+
+function showToast(msg, type = 'success') {
+  const toast = document.getElementById('toast');
+  const toastMsg = document.getElementById('toast-msg');
+  toastMsg.innerText = msg;
+  toast.className = `fixed top-4 left-1/2 -translate-x-1/2 ${type === 'error' ? 'bg-red-500 text-white' : 'bg-emerald-500 text-slate-950'} px-4 py-2 rounded-full text-xs font-black shadow-2xl opacity-100 pointer-events-auto transition-all duration-300 z-50 flex items-center gap-2`;
+  setTimeout(() => {
+    toast.classList.add('opacity-0', 'pointer-events-none');
+  }, 2500);
+}
+
+// NAVEGACIÓN
+function goToGame() {
+  if (!usersDB[currentUser].tickets || usersDB[currentUser].tickets <= 0) {
+    showToast('No tienes cartones disponibles.', 'error');
+    return;
+  }
+  document.getElementById('view-dashboard').classList.add('hidden');
+  document.getElementById('view-game').classList.remove('hidden');
+  document.getElementById('view-game').classList.add('flex');
+  resetGame();
+}
+
+function goToDashboard() {
+  document.getElementById('view-game').classList.add('hidden');
+  document.getElementById('view-game').classList.remove('flex');
+  document.getElementById('view-dashboard').classList.remove('hidden');
+  updateDashboardUI();
+}
+
+// JUEGO DE RASPADITA
+let gridData = [], winningItem = null, isScratchedCompleted = false, isDrawing = false, lastPos = null, cartonCount = 1, audioCtx = null, checkThrottler = null;
+let currentCode = '4777', currentSerie = 'A3606';
+const scratchCanvas = document.getElementById('scratch-canvas');
+const scratchCtx = scratchCanvas.getContext('2d', { willReadFrequently: true });
+const jsConfetti = new JSConfetti();
+
+function initCanvas() {
+  const rect = scratchCanvas.parentElement.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  scratchCanvas.width = rect.width * dpr;
+  scratchCanvas.height = rect.height * dpr;
+  scratchCanvas.style.width = rect.width + 'px';
+  scratchCanvas.style.height = rect.height + 'px';
+  
+  scratchCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const w = rect.width, h = rect.height;
+  
+  scratchCtx.globalCompositeOperation = 'source-over';
+  scratchCtx.clearRect(0, 0, w, h);
+  
+  const grad = scratchCtx.createLinearGradient(0, 0, w, h);
+  grad.addColorStop(0, '#d97706');
+  grad.addColorStop(0.5, '#f59e0b');
+  grad.addColorStop(1, '#78350f');
+  scratchCtx.fillStyle = grad;
+  scratchCtx.fillRect(0, 0, w, h);
+  
+  scratchCtx.font = '900 20px Poppins, sans-serif';
+  scratchCtx.fillStyle = '#451a03';
+  scratchCtx.textAlign = 'center';
+  scratchCtx.fillText('★ RASPA AQUÍ ★', w / 2, h / 2);
+}
+
+function generateCardData() {
+  const customPrizes = JSON.parse(localStorage.getItem('raspa_prizes_db') || 'null');
+  const cardConfig = JSON.parse(localStorage.getItem('raspa_card_config') || 'null');
+
+  let ITEMS = customPrizes && customPrizes.length > 0 ? customPrizes : [
+    { id: 'magnet', name: 'Imán', type: 'icon', val: 'fa-magnet', color: 'text-red-500', prize: 300000 },
+    { id: 'hat', name: 'Sombrero', type: 'icon', val: 'fa-hat-wizard', color: 'text-purple-600', prize: 50000 }
+  ];
+
+  if (cardConfig) {
+    document.getElementById('card-display-title').innerText = cardConfig.title || 'RASPA BONO';
+    document.getElementById('card-display-subtitle').innerText = cardConfig.subtitle || 'MILLONARIO ORIGINAL';
+    document.getElementById('card-display-max').innerText = cardConfig.maxPrizeText || 'GANA HASTA 5.000.000 GS';
+    document.getElementById('card-price-badge').innerText = (cardConfig.price || 5000).toLocaleString('es-PY');
+  }
+
+  const winRate = cardConfig && cardConfig.winRate ? cardConfig.winRate / 100 : 0.45;
+
+  gridData = [];
+  const isWinner = Math.random() < winRate;
+  
+  if (isWinner) {
+    winningItem = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+    for (let i = 0; i < 3; i++) gridData.push({ ...winningItem });
+    const count = {};
+    count[winningItem.id || winningItem.name] = 3;
+    
+    for (let i = 0; i < 6; i++) {
+      let item;
+      do {
+        item = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+      } while ((count[item.id || item.name] || 0) >= 2);
+      count[item.id || item.name] = (count[item.id || item.name] || 0) + 1;
+      gridData.push({ ...item });
+    }
+  } else {
+    winningItem = null;
+    const count = {};
+    for (let i = 0; i < 9; i++) {
+      let item;
+      do {
+        item = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+      } while ((count[item.id || item.name] || 0) >= 2);
+      count[item.id || item.name] = (count[item.id || item.name] || 0) + 1;
+      gridData.push({ ...item });
+    }
+  }
+  
+  gridData.sort(() => Math.random() - 0.5);
+  
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  gridData.forEach((item, i) => {
+    const cell = document.createElement('div');
+    cell.className = 'grid-cell';
+    cell.id = `cell-${i}`;
+
+    let renderHtml = '';
+    if (item.type === 'image') {
+      renderHtml = `<img src="${item.val}" class="w-10 h-10 object-contain mb-1">`;
+    } else if (item.type === 'emoji') {
+      renderHtml = `<span class="text-3xl mb-1">${item.val}</span>`;
+    } else {
+      renderHtml = `<i class="fa-solid ${item.val || item.icon || 'fa-gem'} ${item.color || 'text-amber-500'} text-3xl mb-1"></i>`;
+    }
+
+    cell.innerHTML = `
+      ${renderHtml}
+      <span class="text-[11px] font-black text-slate-800">${item.prize.toLocaleString('es-PY')} GS</span>
+    `;
+    grid.appendChild(cell);
+  });
+}
+
+function getPos(e) {
+  const r = scratchCanvas.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  return { x: clientX - r.left, y: clientY - r.top };
+}
+
+function erase(x, y) {
+  if (isScratchedCompleted) return;
+  
+  scratchCtx.save();
+  scratchCtx.globalCompositeOperation = 'destination-out';
+  scratchCtx.lineCap = 'round';
+  scratchCtx.lineJoin = 'round';
+  scratchCtx.lineWidth = 50;
+  
+  if (lastPos) {
+    scratchCtx.beginPath();
+    scratchCtx.moveTo(lastPos.x, lastPos.y);
+    scratchCtx.lineTo(x, y);
+    scratchCtx.stroke();
+  }
+  
+  scratchCtx.beginPath();
+  scratchCtx.arc(x, y, 25, 0, Math.PI * 2);
+  scratchCtx.fill();
+  scratchCtx.restore();
+  
+  lastPos = { x, y };
+  throttledCheck();
+}
+
+function throttledCheck() {
+  if (checkThrottler) return;
+  checkThrottler = setTimeout(() => {
+    checkThrottler = null;
+    checkPercent();
+  }, 50);
+}
+
+function checkPercent() {
+  const w = scratchCanvas.width;
+  const h = scratchCanvas.height;
+  try {
+    const data = scratchCtx.getImageData(0, 0, w, h).data;
+    let transparentPixels = 0, totalPixels = 0;
+    
+    for (let i = 3; i < data.length; i += 32) {
+      totalPixels++;
+      if (data[i] < 20) transparentPixels++;
+    }
+    
+    const percent = Math.min(100, Math.round((transparentPixels / totalPixels) * 100));
+    document.getElementById('scratch-progress').style.width = percent + '%';
+    document.getElementById('progress-text').innerText = percent + '%';
+    
+    if (percent >= 99 && !isScratchedCompleted) {
+      isScratchedCompleted = true;
+      scratchCanvas.style.transition = 'opacity 0.3s ease-out';
+      scratchCanvas.style.opacity = '0';
+      setTimeout(() => scratchCanvas.style.display = 'none', 300);
+      evaluate();
+    }
+  } catch (e) {}
+}
+
+function evaluate() {
+  const title = document.getElementById('result-status-title');
+  const prize = document.getElementById('result-prize');
+  const status = document.getElementById('payment-status');
+  
+  let winAmount = 0;
+  let isWin = false;
+
+  if (winningItem) {
+    isWin = true;
+    winAmount = winningItem.prize;
+    gridData.forEach((it, i) => {
+      if ((it.id && it.id === winningItem.id) || (it.name === winningItem.name)) {
+        document.getElementById(`cell-${i}`).classList.add('matched');
+      }
+    });
+    title.innerText = '¡GANASTE!';
+    title.className = 'text-3xl font-black text-amber-400 my-1';
+    prize.innerText = winAmount.toLocaleString('es-PY') + ' GS';
+    prize.className = 'text-3xl font-black gold-gradient-text my-1';
+    status.innerText = 'PREMIO ACREDITADO';
+    playWinSound();
+    jsConfetti.addConfetti({ emojis: ['🎉', '💰', '🍀'], confettiNumber: 60 });
+
+    usersDB[currentUser].balance = (usersDB[currentUser].balance || 0) + winAmount;
+  } else {
+    title.innerText = 'SUERTE PARA LA PRÓXIMA';
+    title.className = 'text-xl font-bold text-slate-200 my-1';
+    prize.innerText = '0 GS';
+    prize.className = 'text-3xl font-black text-slate-500 my-1';
+    status.innerText = 'SIN PREMIO';
+    playLoseSound();
+  }
+
+  usersDB[currentUser].tickets = Math.max(0, (usersDB[currentUser].tickets || 0) - 1);
+  if (!usersDB[currentUser].history) usersDB[currentUser].history = [];
+  
+  usersDB[currentUser].history.unshift({
+    code: currentCode,
+    serie: currentSerie,
+    win: isWin,
+    prize: winAmount,
+    date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  });
+
+  saveUserData();
+}
+
+function initAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playWinSound() {
+  try {
+    initAudio();
+    [523, 659, 784, 1046].forEach((f, i) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.15, audioCtx.currentTime + i * 0.12);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.12 + 0.3);
+      o.connect(g);
+      g.connect(audioCtx.destination);
+      o.start(audioCtx.currentTime + i * 0.12);
+      o.stop(audioCtx.currentTime + i * 0.12 + 0.3);
+    });
+  } catch (e) {}
+}
+
+function playLoseSound() {
+  try {
+    initAudio();
+    [300, 220].forEach((f, i) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.08, audioCtx.currentTime + i * 0.15);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.15 + 0.2);
+      o.connect(g);
+      g.connect(audioCtx.destination);
+      o.start(audioCtx.currentTime + i * 0.15);
+      o.stop(audioCtx.currentTime + i * 0.15 + 0.2);
+    });
+  } catch (e) {}
+}
+
+function resetGame() {
+  isScratchedCompleted = false;
+  isDrawing = false;
+  lastPos = null;
+  
+  scratchCanvas.style.display = 'block';
+  scratchCanvas.style.opacity = '1';
+  document.getElementById('scratch-progress').style.width = '0%';
+  document.getElementById('progress-text').innerText = '0%';
+  
+  currentCode = Math.floor(1000 + Math.random() * 9000).toString();
+  currentSerie = 'A' + Math.floor(1000 + Math.random() * 9000);
+  
+  document.getElementById('carton-code').innerText = currentCode;
+  document.getElementById('card-big-number').innerText = currentCode;
+  document.getElementById('serie-code-top').innerText = 'SERIE ' + currentSerie;
+  document.getElementById('card-big-serie').innerText = 'SERIE ' + currentSerie;
+  
+  document.getElementById('result-status-title').innerText = 'Raspa el cartón...';
+  document.getElementById('result-status-title').className = 'text-xl font-black text-amber-100/60 my-1';
+  document.getElementById('result-prize').innerText = '? ? ? GS';
+  document.getElementById('result-prize').className = 'text-3xl font-black text-slate-500 my-1';
+  document.getElementById('payment-status').innerText = 'PENDIENTE DE RASPE';
+  
+  generateCardData();
+  initCanvas();
+}
+
+function nextCard() {
+  if (!usersDB[currentUser].tickets || usersDB[currentUser].tickets <= 0) {
+    showToast('No tienes más cartones. Volviendo al perfil...', 'error');
+    setTimeout(goToDashboard, 1500);
+    return;
+  }
+  cartonCount++;
+  document.getElementById('carton-num').innerText = cartonCount;
+  resetGame();
+}
+
+function setupEvents() {
+  scratchCanvas.addEventListener('mousedown', e => {
+    e.preventDefault();
+    isDrawing = true;
+    lastPos = null;
+    const p = getPos(e);
+    erase(p.x, p.y);
+  });
+  
+  scratchCanvas.addEventListener('mousemove', e => {
+    if (isDrawing) {
+      e.preventDefault();
+      const p = getPos(e);
+      erase(p.x, p.y);
+    }
+  });
+  
+  window.addEventListener('mouseup', () => {
+    isDrawing = false;
+    lastPos = null;
+  });
+  
+  scratchCanvas.addEventListener('touchstart', e => {
+    isDrawing = true;
+    lastPos = null;
+    const p = getPos(e);
+    erase(p.x, p.y);
+  }, { passive: false });
+  
+  scratchCanvas.addEventListener('touchmove', e => {
+    if (isDrawing) {
+      e.preventDefault();
+      const p = getPos(e);
+      erase(p.x, p.y);
+    }
+  }, { passive: false });
+  
+  scratchCanvas.addEventListener('touchend', () => {
+    isDrawing = false;
+    lastPos = null;
+  });
+}
+
+window.onload = () => {
+  checkSession();
+  setupEvents();
+};
+
+window.onresize = () => {
+  if (!isScratchedCompleted && !document.getElementById('view-game').classList.contains('hidden')) {
+    initCanvas();
+  }
+};
+</script>
+</body>
+</html>
