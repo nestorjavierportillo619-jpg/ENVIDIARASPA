@@ -98,10 +98,13 @@ body {
       </div>
     </div>
 
-    <!-- Menú de Pestañas -->
+    <!-- Menú de Pestañas Organizado -->
     <div class="flex p-2 bg-slate-950 border-b border-slate-800/80 overflow-x-auto no-scrollbar gap-2">
-      <button onclick="switchTab('users')" id="tab-users" class="py-2.5 px-3.5 sm:px-4 rounded-xl text-[11px] sm:text-xs font-extrabold bg-amber-500 text-slate-950 transition flex items-center justify-center gap-2 shrink-0">
-        <i class="fa-solid fa-users text-xs"></i> Usuarios
+      <button onclick="switchTab('quick-charge')" id="tab-quick-charge" class="py-2.5 px-3.5 sm:px-4 rounded-xl text-[11px] sm:text-xs font-extrabold bg-amber-500 text-slate-950 transition flex items-center justify-center gap-2 shrink-0">
+        <i class="fa-solid fa-bolt text-xs"></i> Cargar Cartón
+      </button>
+      <button onclick="switchTab('users')" id="tab-users" class="py-2.5 px-3.5 sm:px-4 rounded-xl text-[11px] sm:text-xs font-extrabold text-slate-400 hover:text-white bg-slate-900/50 border border-slate-800/50 transition flex items-center justify-center gap-2 shrink-0">
+        <i class="fa-solid fa-users text-xs"></i> Clientes
       </button>
       <button onclick="switchTab('agents')" id="tab-agents" class="py-2.5 px-3.5 sm:px-4 rounded-xl text-[11px] sm:text-xs font-extrabold text-slate-400 hover:text-white bg-slate-900/50 border border-slate-800/50 transition flex items-center justify-center gap-2 shrink-0">
         <i class="fa-solid fa-user-tie text-xs"></i> Agentes
@@ -122,45 +125,82 @@ body {
 
     <div class="p-3 sm:p-5 md:p-6 flex-1 flex flex-col gap-5 max-h-[75vh] overflow-y-auto">
       
-      <!-- CONTENIDO 1: GESTIÓN DE USUARIOS -->
-      <div id="section-users" class="flex flex-col gap-5">
-        <div class="bg-slate-900/60 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-800 shadow-xl">
-          <div class="flex items-center gap-2 mb-3 pb-2 border-b border-slate-800/60">
-            <i class="fa-solid fa-user-plus text-amber-400 text-xs"></i>
-            <h3 class="text-xs font-extrabold text-white uppercase tracking-wider">Crear Nuevo Usuario o Agente</h3>
+      <!-- SECCIÓN 0: CARGA RÁPIDA DE CARTONES ESCRIBIENDO USUARIO -->
+      <div id="section-quick-charge" class="flex flex-col gap-5">
+        <div class="bg-gradient-to-br from-slate-900 to-slate-950 p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-amber-500/30 shadow-2xl">
+          <div class="flex items-center gap-3 mb-4 pb-3 border-b border-slate-800/80">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400">
+              <i class="fa-solid fa-ticket text-lg"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-black text-white uppercase tracking-wider">Cargar Cartones por Usuario</h3>
+              <p class="text-[11px] text-slate-400">Escribe el nombre de usuario de cualquier Cliente o Agente para asignarle cartones directamente.</p>
+            </div>
+          </div>
+
+          <form onsubmit="handleDirectTicketCharge(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="space-y-1 sm:col-span-1">
+              <label class="block text-[10px] font-bold text-slate-400 uppercase">Nombre de Usuario (Login)</label>
+              <div class="relative">
+                <span class="absolute left-3.5 top-3 text-slate-500 text-xs font-bold">@</span>
+                <input type="text" id="charge-username" required placeholder="juanperez" oninput="checkUserTicketPreview(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 pl-8 pr-3 text-xs text-white focus:outline-none focus:border-amber-500 font-mono">
+              </div>
+              <span id="charge-user-info" class="text-[10px] text-slate-500 block font-bold mt-1">Escribe para buscar usuario...</span>
+            </div>
+
+            <div class="space-y-1 sm:col-span-1">
+              <label class="block text-[10px] font-bold text-slate-400 uppercase">Cantidad de Cartones</label>
+              <input type="number" id="charge-tickets-count" min="1" required placeholder="5" value="5" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white font-black focus:outline-none focus:border-amber-500">
+            </div>
+
+            <div class="sm:col-span-1 flex items-end">
+              <button type="submit" class="w-full py-2.5 rounded-xl font-black text-slate-950 bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500 hover:brightness-110 transition text-xs shadow-lg uppercase tracking-wider h-[42px] flex items-center justify-center gap-2">
+                <i class="fa-solid fa-plus-circle text-sm"></i> Cargar Cartones
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- CONTENIDO 1: GESTIÓN SEPARADA DE CLIENTES -->
+      <div id="section-users" class="hidden flex-col gap-5">
+        <!-- Tarjeta Crear Cliente -->
+        <div class="bg-slate-900/60 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-blue-500/20 shadow-xl">
+          <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800/60">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-user-plus text-blue-400 text-xs"></i>
+              <h3 class="text-xs font-extrabold text-white uppercase tracking-wider">Crear Nuevo Cliente</h3>
+            </div>
+            <span class="text-[10px] bg-blue-950 text-blue-300 font-bold px-2 py-0.5 rounded-full border border-blue-800">Sección Clientes</span>
           </div>
           
-          <form onsubmit="handleCreateUser(event)" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+          <form onsubmit="handleCreateUserRole(event, 'client')" class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-3 gap-3">
             <div class="space-y-1">
-              <label class="block text-[10px] font-bold text-slate-400 uppercase">Nombre Completo</label>
-              <input type="text" id="new-name" required placeholder="Ej: Juan Pérez" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500">
+              <label class="block text-[10px] font-bold text-slate-400 uppercase">Nombre Completo del Cliente</label>
+              <input type="text" id="new-client-name" required placeholder="Ej: Juan Pérez" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-blue-500">
             </div>
             <div class="space-y-1">
               <label class="block text-[10px] font-bold text-slate-400 uppercase">Usuario (Login)</label>
-              <input type="text" id="new-username" required placeholder="juanperez" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500">
+              <input type="text" id="new-client-username" required placeholder="juanperez" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-blue-500">
             </div>
             <div class="space-y-1">
               <label class="block text-[10px] font-bold text-slate-400 uppercase">Contraseña</label>
-              <input type="password" id="new-pass" required placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-500">
+              <input type="password" id="new-client-pass" required placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-blue-500">
             </div>
-            <div class="space-y-1">
-              <label class="block text-[10px] font-bold text-slate-400 uppercase">Rol</label>
-              <select id="new-role" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white font-bold focus:outline-none focus:border-amber-500">
-                <option value="client">Cliente</option>
-                <option value="agent">Agente</option>
-              </select>
-            </div>
-            <div class="sm:col-span-2 md:col-span-4 pt-1">
-              <button type="submit" class="w-full py-3 rounded-xl font-black text-slate-950 bg-amber-500 hover:bg-amber-400 transition text-xs shadow-lg uppercase tracking-wider">Guardar Usuario en la Nube</button>
+            <div class="sm:col-span-3 pt-1">
+              <button type="submit" class="w-full py-2.5 rounded-xl font-black text-white bg-blue-600 hover:bg-blue-500 transition text-xs shadow-lg uppercase tracking-wider flex items-center justify-center gap-2">
+                <i class="fa-solid fa-user-check"></i> Registrar Solo Cliente
+              </button>
             </div>
           </form>
         </div>
 
+        <!-- Lista Clientes -->
         <div class="bg-slate-900/60 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-800 shadow-xl">
           <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800/60">
             <div class="flex items-center gap-2">
-              <i class="fa-solid fa-users-gear text-blue-400 text-xs"></i>
-              <h3 class="text-xs font-extrabold text-white uppercase tracking-wider">Usuarios Registrados</h3>
+              <i class="fa-solid fa-users text-blue-400 text-xs"></i>
+              <h3 class="text-xs font-extrabold text-white uppercase tracking-wider">Clientes Registrados</h3>
             </div>
           </div>
 
@@ -171,7 +211,6 @@ body {
                 <tr>
                   <th class="p-3">ID / Nombre</th>
                   <th class="p-3">Usuario</th>
-                  <th class="p-3">Rol</th>
                   <th class="p-3">Saldo GS</th>
                   <th class="p-3">Cartones</th>
                   <th class="p-3">Fecha Creación</th>
@@ -187,13 +226,45 @@ body {
         </div>
       </div>
 
-      <!-- CONTENIDO: LISTA DE AGENTES -->
+      <!-- CONTENIDO 2: GESTIÓN SEPARADA DE AGENTES -->
       <div id="section-agents" class="hidden flex-col gap-5">
-        <div class="bg-slate-900/60 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-800 shadow-xl">
+        <!-- Tarjeta Crear Agente -->
+        <div class="bg-slate-900/60 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-purple-500/20 shadow-xl">
           <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800/60">
             <div class="flex items-center gap-2">
               <i class="fa-solid fa-user-tie text-purple-400 text-xs"></i>
-              <h3 class="text-xs font-extrabold text-white uppercase tracking-wider">Mis Agentes Registrados</h3>
+              <h3 class="text-xs font-extrabold text-white uppercase tracking-wider">Crear Nuevo Agente</h3>
+            </div>
+            <span class="text-[10px] bg-purple-950 text-purple-300 font-bold px-2 py-0.5 rounded-full border border-purple-800">Sección Agentes</span>
+          </div>
+          
+          <form onsubmit="handleCreateUserRole(event, 'agent')" class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-3 gap-3">
+            <div class="space-y-1">
+              <label class="block text-[10px] font-bold text-slate-400 uppercase">Nombre Completo del Agente</label>
+              <input type="text" id="new-agent-name" required placeholder="Ej: Agente Carlos" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-purple-500">
+            </div>
+            <div class="space-y-1">
+              <label class="block text-[10px] font-bold text-slate-400 uppercase">Usuario (Login)</label>
+              <input type="text" id="new-agent-username" required placeholder="agentecarlos" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-purple-500">
+            </div>
+            <div class="space-y-1">
+              <label class="block text-[10px] font-bold text-slate-400 uppercase">Contraseña</label>
+              <input type="password" id="new-agent-pass" required placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-purple-500">
+            </div>
+            <div class="sm:col-span-3 pt-1">
+              <button type="submit" class="w-full py-2.5 rounded-xl font-black text-white bg-purple-600 hover:bg-purple-500 transition text-xs shadow-lg uppercase tracking-wider flex items-center justify-center gap-2">
+                <i class="fa-solid fa-user-tie"></i> Registrar Solo Agente
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Lista Agentes -->
+        <div class="bg-slate-900/60 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-800 shadow-xl">
+          <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800/60">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-user-gear text-purple-400 text-xs"></i>
+              <h3 class="text-xs font-extrabold text-white uppercase tracking-wider">Agentes Registrados</h3>
             </div>
           </div>
 
@@ -249,7 +320,7 @@ body {
         </div>
       </div>
 
-      <!-- CONTENIDO 2: RETIROS -->
+      <!-- CONTENIDO 3: RETIROS -->
       <div id="section-withdrawals" class="hidden flex-col gap-5">
         <div class="bg-slate-900/60 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-800 shadow-xl">
           <div class="flex items-center gap-2 mb-3 pb-2 border-b border-slate-800/60">
@@ -304,7 +375,7 @@ body {
         </div>
       </div>
 
-      <!-- CONTENIDO 3: PREMIOS -->
+      <!-- CONTENIDO 4: PREMIOS -->
       <div id="section-prizes" class="hidden flex-col gap-5">
         <div class="bg-slate-900/60 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-800 shadow-xl">
           <div class="flex items-center gap-2 mb-3 pb-2 border-b border-slate-800/60">
@@ -350,7 +421,7 @@ body {
         </div>
       </div>
 
-      <!-- CONTENIDO 4: CARTÓN CUSTOM -->
+      <!-- CONTENIDO 5: CARTÓN CUSTOM -->
       <div id="section-custom-card" class="hidden flex-col gap-5">
         <div class="bg-slate-900/60 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-800 shadow-xl">
           <div class="flex items-center gap-2 mb-3 pb-2 border-b border-slate-800/60">
@@ -504,7 +575,6 @@ body {
 
     if (pass === adminPassword) {
       sessionStorage.setItem('admin_logged', 'true');
-      showToast('¡Bienvenido Administrador!');
       showDashboard();
     } else {
       showToast('Contraseña incorrecta', 'error');
@@ -559,9 +629,9 @@ body {
     }
   };
 
-  // CAMBIO DE PESTAÑAS
+  // CAMBIO DE PESTAÑAS SEPARADAS
   window.switchTab = function(tab) {
-    const sections = ['users', 'agents', 'agent-history', 'withdrawals', 'prizes', 'custom-card'];
+    const sections = ['quick-charge', 'users', 'agents', 'agent-history', 'withdrawals', 'prizes', 'custom-card'];
     sections.forEach(s => {
       const secEl = document.getElementById(`section-${s}`);
       const tabEl = document.getElementById(`tab-${s}`);
@@ -574,25 +644,81 @@ body {
     if (activeSec) activeSec.classList.remove('hidden');
     if (activeTab) activeTab.className = "py-2.5 px-3.5 sm:px-4 rounded-xl text-[11px] sm:text-xs font-extrabold bg-amber-500 text-slate-950 transition flex items-center justify-center gap-2 shrink-0 shadow-lg shadow-amber-500/10";
 
+    if (tab === 'users') renderUsersTable();
     if (tab === 'agents') renderAgentsTable();
     if (tab === 'agent-history') renderAgentHistoryTable();
     if (tab === 'withdrawals') renderWithdrawalsTable();
   };
 
-  // GESTIÓN DE USUARIOS
-  window.handleCreateUser = async function(e) {
-    e.preventDefault();
-    const name = document.getElementById('new-name').value.trim();
-    const username = document.getElementById('new-username').value.trim().toLowerCase();
-    const pass = document.getElementById('new-pass').value;
-    const role = document.getElementById('new-role').value;
+  // MÓDULO DE CARGA RÁPIDA DE CARTONES POR NOMBRE DE USUARIO
+  window.checkUserTicketPreview = function(val) {
+    const infoEl = document.getElementById('charge-user-info');
+    const cleanUser = val.trim().toLowerCase();
 
-    if (usersDB[username]) {
-      showToast('El nombre de usuario ya existe', 'error');
+    if (!cleanUser) {
+      infoEl.innerText = "Escribe para buscar usuario...";
+      infoEl.className = "text-[10px] text-slate-500 block font-bold mt-1";
       return;
     }
 
-    const prefix = role === 'agent' ? 'AGT-' : 'HLN-';
+    if (usersDB[cleanUser]) {
+      const u = usersDB[cleanUser];
+      const isAgent = u.role === 'agent';
+      infoEl.innerHTML = `Usuario encontrado: <span class="text-white">${u.name}</span> (${isAgent ? 'AGENTE' : 'CLIENTE'}) — Cartones actuales: <span class="text-amber-400">${u.tickets || 0}</span>`;
+      infoEl.className = "text-[10px] text-emerald-400 block font-bold mt-1";
+    } else {
+      infoEl.innerText = "Usuario no encontrado en la base de datos";
+      infoEl.className = "text-[10px] text-red-400 block font-bold mt-1";
+    }
+  };
+
+  window.handleDirectTicketCharge = async function(e) {
+    e.preventDefault();
+    const usernameInput = document.getElementById('charge-username').value.trim().toLowerCase();
+    const countInput = parseInt(document.getElementById('charge-tickets-count').value);
+
+    if (!usernameInput || isNaN(countInput) || countInput <= 0) {
+      showToast('Por favor completa un usuario y cantidad válidos', 'error');
+      return;
+    }
+
+    if (!usersDB[usernameInput]) {
+      showToast('El usuario especificado no existe', 'error');
+      return;
+    }
+
+    usersDB[usernameInput].tickets = (usersDB[usernameInput].tickets || 0) + countInput;
+    await saveToCloud();
+
+    showToast(`Se agregaron ${countInput} cartones a @${usernameInput}`);
+    
+    // Resetear formulario y actualizar tablas
+    document.getElementById('charge-username').value = '';
+    document.getElementById('charge-tickets-count').value = '5';
+    document.getElementById('charge-user-info').innerText = 'Escribe para buscar usuario...';
+    document.getElementById('charge-user-info').className = 'text-[10px] text-slate-500 block font-bold mt-1';
+
+    renderUsersTable();
+    renderAgentsTable();
+  };
+
+  // CREAR CLIENTE O AGENTE DE FORMA TOTALMENTE INDEPENDIENTE
+  window.handleCreateUserRole = async function(e, roleType) {
+    e.preventDefault();
+    const nameEl = document.getElementById(`new-${roleType}-name`);
+    const usernameEl = document.getElementById(`new-${roleType}-username`);
+    const passEl = document.getElementById(`new-${roleType}-pass`);
+
+    const name = nameEl.value.trim();
+    const username = usernameEl.value.trim().toLowerCase();
+    const pass = passEl.value;
+
+    if (usersDB[username]) {
+      showToast('El nombre de usuario ya está registrado', 'error');
+      return;
+    }
+
+    const prefix = roleType === 'agent' ? 'AGT-' : 'CLI-';
     const userId = prefix + Math.floor(10000 + Math.random() * 90000);
     const currentDate = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -601,7 +727,7 @@ body {
       name: name,
       username: username,
       password: pass,
-      role: role,
+      role: roleType,
       balance: 0,
       tickets: 0,
       createdAt: currentDate,
@@ -609,73 +735,80 @@ body {
     };
 
     await saveToCloud();
-    showToast(`Usuario ${name} guardado en Firebase`);
-    e.target.reset();
+    showToast(`${roleType === 'agent' ? 'Agente' : 'Cliente'} ${name} registrado con éxito`);
+    
+    nameEl.value = '';
+    usernameEl.value = '';
+    passEl.value = '';
+
     renderUsersTable();
     renderAgentsTable();
   };
 
+  // RENDERIZAR VISTA EXCLUSIVA DE CLIENTES
   function renderUsersTable() {
     const tbody = document.getElementById('table-users-body');
     const cardsContainer = document.getElementById('cards-users-body');
     if (!tbody || !cardsContainer) return;
 
-    const keys = Object.keys(usersDB);
+    // Filtrar solo usuarios con rol de cliente
+    const clientKeys = Object.keys(usersDB).filter(k => usersDB[k].role === 'client' || !usersDB[k].role);
 
-    if (keys.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-500">No hay usuarios registrados.</td></tr>`;
-      cardsContainer.innerHTML = `<div class="text-center text-slate-500 text-xs py-4">No hay usuarios registrados.</div>`;
+    if (clientKeys.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500">No hay clientes registrados.</td></tr>`;
+      cardsContainer.innerHTML = `<div class="text-center text-slate-500 text-xs py-4 col-span-full">No hay clientes registrados.</div>`;
       return;
     }
 
-    tbody.innerHTML = keys.map(k => {
+    tbody.innerHTML = clientKeys.map(k => {
       const u = usersDB[k];
-      const isAgent = u.role === 'agent';
       return `
         <tr class="hover:bg-slate-900/40 transition">
-          <td class="p-3 font-bold text-white">${u.name}<br><span class="text-[10px] text-amber-400 font-mono">${u.id}</span></td>
-          <td class="p-3 text-slate-300 font-mono">${u.username}</td>
-          <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-black ${isAgent ? 'bg-purple-950 text-purple-300 border border-purple-800' : 'bg-blue-950 text-blue-300 border border-blue-800'}">${isAgent ? 'AGENTE' : 'CLIENTE'}</span></td>
+          <td class="p-3 font-bold text-white">${u.name}<br><span class="text-[10px] text-blue-400 font-mono">${u.id}</span></td>
+          <td class="p-3 text-slate-300 font-mono">@${u.username}</td>
           <td class="p-3 font-black text-amber-400">${(u.balance || 0).toLocaleString('es-PY')} GS</td>
-          <td class="p-3 font-black text-purple-300">${u.tickets || 0}</td>
+          <td class="p-3 font-black text-purple-300">${u.tickets || 0} Cartones</td>
           <td class="p-3 text-slate-400 text-[11px]">${u.createdAt || 'N/A'}</td>
-          <td class="p-3 flex justify-center gap-1.5">
-            <button onclick="addTickets('${k}')" class="bg-purple-500/10 hover:bg-purple-500 text-purple-400 hover:text-slate-950 px-3 py-1 rounded-lg text-[10px] font-extrabold border border-purple-500/30 transition">Cargar Carton</button>
+          <td class="p-3 text-center">
+            <button onclick="addTickets('${k}')" class="bg-amber-500/10 hover:bg-amber-500 text-amber-400 hover:text-slate-950 px-3 py-1 rounded-lg text-[10px] font-extrabold border border-amber-500/30 transition">
+              <i class="fa-solid fa-plus text-[9px] mr-1"></i> Cargar Cartón
+            </button>
           </td>
         </tr>
       `;
     }).join('');
 
-    cardsContainer.innerHTML = keys.map(k => {
+    cardsContainer.innerHTML = clientKeys.map(k => {
       const u = usersDB[k];
-      const isAgent = u.role === 'agent';
       return `
         <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex flex-col gap-2.5 shadow-sm">
           <div class="flex items-center justify-between">
             <div>
               <div class="text-xs font-black text-white">${u.name}</div>
-              <div class="text-[10px] text-amber-400 font-mono">${u.id} • @${u.username}</div>
+              <div class="text-[10px] text-blue-400 font-mono">${u.id} • @${u.username}</div>
             </div>
-            <span class="px-2 py-0.5 rounded-full text-[9px] font-black ${isAgent ? 'bg-purple-950 text-purple-300 border border-purple-800' : 'bg-blue-950 text-blue-300 border border-blue-800'}">${isAgent ? 'AGENTE' : 'CLIENTE'}</span>
+            <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-blue-950 text-blue-300 border border-blue-800">CLIENTE</span>
           </div>
           <div class="flex justify-between items-center text-xs bg-slate-900/60 p-2 rounded-lg border border-slate-800/60">
             <div><span class="text-[10px] text-slate-400 block">Saldo</span><span class="font-black text-amber-400">${(u.balance || 0).toLocaleString('es-PY')} GS</span></div>
             <div class="text-right"><span class="text-[10px] text-slate-400 block">Cartones</span><span class="font-black text-purple-300">${u.tickets || 0}</span></div>
           </div>
           <div class="text-[10px] text-slate-400">Creado: ${u.createdAt || 'N/A'}</div>
-          <div class="flex gap-2 pt-0.5">
-            <button onclick="addTickets('${k}')" class="w-full bg-purple-500/10 hover:bg-purple-500 text-purple-400 hover:text-slate-950 py-1.5 rounded-lg text-[10px] font-extrabold border border-purple-500/30 transition text-center">Cargar Carton</button>
-          </div>
+          <button onclick="addTickets('${k}')" class="w-full bg-amber-500/10 hover:bg-amber-500 text-amber-400 hover:text-slate-950 py-1.5 rounded-lg text-[10px] font-extrabold border border-amber-500/30 transition text-center">
+            <i class="fa-solid fa-plus text-[9px] mr-1"></i> Cargar Cartón
+          </button>
         </div>
       `;
     }).join('');
   }
 
+  // RENDERIZAR VISTA EXCLUSIVA DE AGENTES
   function renderAgentsTable() {
     const tbody = document.getElementById('table-agents-body');
     const cardsContainer = document.getElementById('cards-agents-body');
     if (!tbody || !cardsContainer) return;
 
+    // Filtrar solo usuarios con rol de agente
     const agentKeys = Object.keys(usersDB).filter(k => usersDB[k].role === 'agent');
 
     if (agentKeys.length === 0) {
@@ -693,7 +826,9 @@ body {
           <td class="p-3 font-black text-purple-300">${a.tickets || 0} Cartones</td>
           <td class="p-3 text-slate-400 text-[11px]">${a.createdAt || 'N/A'}</td>
           <td class="p-3 text-center">
-            <button onclick="addTickets('${k}')" class="bg-purple-500/10 hover:bg-purple-500 text-purple-400 hover:text-slate-950 px-3 py-1 rounded-lg text-[10px] font-extrabold border border-purple-500/30 transition">Cargar Cartones</button>
+            <button onclick="addTickets('${k}')" class="bg-purple-500/10 hover:bg-purple-500 text-purple-400 hover:text-slate-950 px-3 py-1 rounded-lg text-[10px] font-extrabold border border-purple-500/30 transition">
+              <i class="fa-solid fa-plus text-[9px] mr-1"></i> Cargar Cartones Agente
+            </button>
           </td>
         </tr>
       `;
@@ -715,7 +850,9 @@ body {
             <span class="font-black text-purple-300">${a.tickets || 0}</span>
           </div>
           <div class="text-[10px] text-slate-400">Creado: ${a.createdAt || 'N/A'}</div>
-          <button onclick="addTickets('${k}')" class="w-full bg-purple-500/10 hover:bg-purple-500 text-purple-400 hover:text-slate-950 py-1.5 rounded-lg text-[10px] font-extrabold border border-purple-500/30 transition text-center">Cargar Cartones</button>
+          <button onclick="addTickets('${k}')" class="w-full bg-purple-500/10 hover:bg-purple-500 text-purple-400 hover:text-slate-950 py-1.5 rounded-lg text-[10px] font-extrabold border border-purple-500/30 transition text-center">
+            <i class="fa-solid fa-plus text-[9px] mr-1"></i> Cargar Cartones Agente
+          </button>
         </div>
       `;
     }).join('');
@@ -770,7 +907,7 @@ body {
   window.addTickets = async function(username) {
     if (!usersDB[username]) return;
     const count = prompt(`Cantidad de cartones a agregar a ${usersDB[username].name}:`, "5");
-    if (count && !isNaN(count)) {
+    if (count && !isNaN(count) && parseInt(count) > 0) {
       usersDB[username].tickets = (usersDB[username].tickets || 0) + parseInt(count);
       await saveToCloud();
       showToast(`Cartones asignados correctamente`);

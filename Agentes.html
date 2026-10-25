@@ -102,8 +102,26 @@ body {
       </div>
     </div>
 
-    <!-- Menú de Pestañas Separadas -->
-    <div class="flex p-2 bg-slate-950 border-b border-slate-800/80 overflow-x-auto no-scrollbar gap-2">
+    <!-- TARJETA DE RESUMEN: CARTONES ASIGNADOS POR EL ADMIN -->
+    <div class="px-4 sm:px-6 pt-4">
+      <div class="bg-gradient-to-r from-purple-950/40 via-indigo-950/40 to-slate-900 border border-purple-500/30 rounded-2xl p-4 flex items-center justify-between shadow-lg">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-300">
+            <i class="fa-solid fa-ticket text-lg"></i>
+          </div>
+          <div>
+            <span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider block">Cartones Disponibles (Otorgados por Admin)</span>
+            <span class="text-lg sm:text-xl font-black text-white" id="agent-stock-tickets">0</span>
+          </div>
+        </div>
+        <div class="text-right">
+          <span class="text-[9px] sm:text-[10px] bg-purple-500/10 text-purple-300 border border-purple-500/20 px-2.5 py-1 rounded-lg font-bold">Stock</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Menú de Pestañas -->
+    <div class="flex p-2 bg-slate-950 border-b border-slate-800/80 overflow-x-auto no-scrollbar gap-2 mt-3">
       <button onclick="switchTab('create')" id="tab-create" class="py-2.5 px-3.5 sm:px-4 rounded-xl text-[11px] sm:text-xs font-extrabold bg-purple-500 text-slate-950 transition flex items-center justify-center gap-2 shrink-0 shadow-lg shadow-purple-500/10">
         <i class="fa-solid fa-user-plus text-xs"></i> Crear Jugador
       </button>
@@ -191,13 +209,19 @@ body {
           </div>
           
           <form onsubmit="handleAgentWithdrawal(event)" class="flex flex-col gap-3.5">
-            <div class="space-y-1">
-              <label class="block text-[10px] font-bold text-slate-400 uppercase">Seleccionar o Escribir Cliente</label>
-              <select id="w-client-username" required onchange="checkClientBalance(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white font-bold focus:outline-none focus:border-purple-500">
-                <option value="">-- Selecciona un cliente --</option>
-              </select>
+            <div class="space-y-1 relative">
+              <label class="block text-[10px] font-bold text-slate-400 uppercase">Escribir o Buscar Usuario / Nombre</label>
+              <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-500 text-xs"></i>
+                <input type="text" id="w-client-search" required autocomplete="off" placeholder="Escribe el usuario o nombre..." oninput="filterClientsDropdown('w')" class="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-xs text-white font-bold focus:outline-none focus:border-purple-500">
+              </div>
+              
+              <!-- Menú desplegable dinámico de sugerencias -->
+              <div id="w-dropdown-results" class="hidden absolute left-0 right-0 top-full mt-1 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-20 max-h-48 overflow-y-auto divide-y divide-slate-800"></div>
+
               <span id="client-balance-info" class="text-[10px] text-slate-400 block font-bold mt-1">Saldo disponible: 0 GS</span>
             </div>
+
             <div class="space-y-1">
               <label class="block text-[10px] font-bold text-slate-400 uppercase">Monto a Retirar (GS)</label>
               <input type="number" id="w-amount" required placeholder="50000" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-purple-500">
@@ -253,12 +277,17 @@ body {
           </div>
           
           <form onsubmit="handleAgentAddTickets(event)" class="flex flex-col gap-3.5">
-            <div class="space-y-1">
-              <label class="block text-[10px] font-bold text-slate-400 uppercase">Cliente Destino</label>
-              <select id="t-client-username" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white font-bold focus:outline-none focus:border-purple-500">
-                <option value="">-- Selecciona un cliente --</option>
-              </select>
+            <div class="space-y-1 relative">
+              <label class="block text-[10px] font-bold text-slate-400 uppercase">Escribir o Buscar Usuario / Nombre</label>
+              <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-500 text-xs"></i>
+                <input type="text" id="t-client-search" required autocomplete="off" placeholder="Escribe el usuario o nombre..." oninput="filterClientsDropdown('t')" class="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-xs text-white font-bold focus:outline-none focus:border-purple-500">
+              </div>
+
+              <!-- Menú desplegable dinámico de sugerencias -->
+              <div id="t-dropdown-results" class="hidden absolute left-0 right-0 top-full mt-1 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-20 max-h-48 overflow-y-auto divide-y divide-slate-800"></div>
             </div>
+
             <div class="space-y-1">
               <label class="block text-[10px] font-bold text-slate-400 uppercase">Cantidad de Cartones</label>
               <input type="number" id="t-quantity" min="1" required placeholder="10" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-purple-500">
@@ -275,12 +304,11 @@ body {
 
 </div>
 
-<!-- SCRIPT DE FIREBASE MODULAR (v10) CON TUS CREDENCIALES EXACTAS -->
+<!-- SCRIPT DE FIREBASE MODULAR (v10) -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  // CONFIGURACIÓN DE FIREBASE (romiraspa)
   const firebaseConfig = {
     apiKey: "AIzaSyDozXJ_MIRZvW9R_V3Q6JPP6P-pFQBzjXo",
     authDomain: "romiraspa.firebaseapp.com",
@@ -297,7 +325,10 @@ body {
   let withdrawalsDB = [];
   let currentAgent = null;
 
-  // CARGAR DESDE FIREBASE
+  // Variables para almacenar el username seleccionado actualmente en Retiros y Cargar Cartón
+  window.selectedWithdrawalUser = "";
+  window.selectedTicketUser = "";
+
   async function initDB() {
     try {
       const docRef = doc(db, "sistema", "datos_globales");
@@ -314,7 +345,6 @@ body {
     }
   }
 
-  // GUARDAR EN FIREBASE
   async function saveToCloud() {
     try {
       const docRef = doc(db, "sistema", "datos_globales");
@@ -328,7 +358,6 @@ body {
     }
   }
 
-  // LOGIN DE AGENTE
   window.handleAgentLogin = async function(e) {
     e.preventDefault();
     await initDB();
@@ -339,7 +368,6 @@ body {
     if (usersDB[username] && usersDB[username].role === 'agent' && usersDB[username].password === pass) {
       currentAgent = username;
       sessionStorage.setItem('agent_logged', currentAgent);
-      showToast('¡Bienvenido Agente ' + usersDB[username].name + '!');
       showDashboard();
     } else {
       showToast('Usuario o contraseña de agente incorrectos', 'error');
@@ -367,12 +395,20 @@ body {
     document.getElementById('view-dashboard').classList.remove('hidden');
     document.getElementById('view-dashboard').classList.add('flex');
     document.getElementById('agent-header-name').innerText = usersDB[currentAgent].name;
+    updateAgentStockDisplay();
     renderClients();
-    populateClientSelects();
     renderAgentHistory();
   }
 
-  // CAMBIO DE PESTAÑAS
+  function updateAgentStockDisplay() {
+    if (!currentAgent || !usersDB[currentAgent]) return;
+    const stock = usersDB[currentAgent].tickets || 0;
+    const stockEl = document.getElementById('agent-stock-tickets');
+    if (stockEl) {
+      stockEl.innerText = stock.toLocaleString('es-PY');
+    }
+  }
+
   window.switchTab = function(tab) {
     const sections = ['create', 'clients', 'withdrawals', 'history', 'tickets'];
     sections.forEach(s => {
@@ -388,7 +424,6 @@ body {
     if (activeTab) activeTab.className = "py-2.5 px-3.5 sm:px-4 rounded-xl text-[11px] sm:text-xs font-extrabold bg-purple-500 text-slate-950 transition flex items-center justify-center gap-2 shrink-0 shadow-lg shadow-purple-500/10";
 
     if (tab === 'clients') renderClients();
-    if (tab === 'withdrawals' || tab === 'tickets') populateClientSelects();
     if (tab === 'history') renderAgentHistory();
   };
 
@@ -403,7 +438,6 @@ body {
     return myClients;
   }
 
-  // 1. CREAR JUGADOR
   window.handleCreateClient = async function(e) {
     e.preventDefault();
     await initDB();
@@ -437,10 +471,8 @@ body {
     showToast(`Jugador ${name} registrado en la nube`);
     e.target.reset();
     renderClients();
-    populateClientSelects();
   };
 
-  // 2. VER CLIENTES
   function renderClients() {
     const tbody = document.getElementById('table-clients-body');
     const cardsContainer = document.getElementById('cards-clients-body');
@@ -492,43 +524,76 @@ body {
     }).join('');
   }
 
-  function populateClientSelects() {
+  // --- FILTRADO DINÁMICO PARA ESCRIBIR/BUSCAR USUARIO ---
+  window.filterClientsDropdown = function(type) {
+    const inputId = type === 'w' ? 'w-client-search' : 't-client-search';
+    const dropdownId = type === 'w' ? 'w-dropdown-results' : 't-dropdown-results';
+    const query = document.getElementById(inputId).value.toLowerCase().trim();
+    const dropdown = document.getElementById(dropdownId);
+
+    if (type === 'w') {
+      window.selectedWithdrawalUser = "";
+      document.getElementById('client-balance-info').innerText = "Saldo disponible: 0 GS";
+      document.getElementById('client-balance-info').className = "text-[10px] text-slate-400 block font-bold mt-1";
+    } else {
+      window.selectedTicketUser = "";
+    }
+
     const clients = getMyClients();
-    const keys = Object.keys(clients);
-    const selectW = document.getElementById('w-client-username');
-    const selectT = document.getElementById('t-client-username');
+    const keys = Object.keys(clients).filter(k => {
+      const u = clients[k];
+      return k.toLowerCase().includes(query) || u.name.toLowerCase().includes(query) || u.id.toLowerCase().includes(query);
+    });
 
-    const optionsHtml = keys.length === 0 
-      ? '<option value="">No hay clientes registrados</option>'
-      : '<option value="">-- Selecciona un cliente --</option>' + keys.map(k => `<option value="${k}">${clients[k].name} (@${clients[k].username}) - Saldo: ${(clients[k].balance||0).toLocaleString('es-PY')} GS</option>`).join('');
-
-    if (selectW) selectW.innerHTML = optionsHtml;
-    if (selectT) selectT.innerHTML = optionsHtml;
-  }
-
-  window.checkClientBalance = function(username) {
-    const infoEl = document.getElementById('client-balance-info');
-    if (!username || !usersDB[username]) {
-      infoEl.innerText = "Saldo disponible: 0 GS";
-      infoEl.className = "text-[10px] text-slate-400 block font-bold mt-1";
+    if (query === '' || keys.length === 0) {
+      dropdown.classList.add('hidden');
+      dropdown.innerHTML = '';
       return;
     }
-    const bal = usersDB[username].balance || 0;
-    infoEl.innerText = `Saldo disponible: ${bal.toLocaleString('es-PY')} GS`;
-    infoEl.className = bal > 0 ? "text-[10px] text-emerald-400 block font-bold mt-1" : "text-[10px] text-red-400 block font-bold mt-1";
+
+    dropdown.classList.remove('hidden');
+    dropdown.innerHTML = keys.map(k => {
+      const u = clients[k];
+      return `
+        <div onclick="selectClientFromSearch('${type}', '${k}', '${u.name}', '${u.username}', ${u.balance || 0})" class="p-2.5 hover:bg-slate-800 cursor-pointer flex justify-between items-center transition">
+          <div>
+            <div class="text-xs font-bold text-white">${u.name} <span class="text-purple-400 font-mono">(@${u.username})</span></div>
+            <div class="text-[9px] text-slate-400">${u.id}</div>
+          </div>
+          <div class="text-right text-[10px] font-black text-amber-400">
+            ${(u.balance || 0).toLocaleString('es-PY')} GS
+          </div>
+        </div>
+      `;
+    }).join('');
   };
 
-  // 3. RETIRAR PREMIO
+  window.selectClientFromSearch = function(type, usernameKey, name, username, balance) {
+    if (type === 'w') {
+      window.selectedWithdrawalUser = usernameKey;
+      document.getElementById('w-client-search').value = `${name} (@${username})`;
+      document.getElementById('w-dropdown-results').classList.add('hidden');
+      
+      const infoEl = document.getElementById('client-balance-info');
+      infoEl.innerText = `Saldo disponible: ${balance.toLocaleString('es-PY')} GS`;
+      infoEl.className = balance > 0 ? "text-[10px] text-emerald-400 block font-bold mt-1" : "text-[10px] text-red-400 block font-bold mt-1";
+    } else {
+      window.selectedTicketUser = usernameKey;
+      document.getElementById('t-client-search').value = `${name} (@${username})`;
+      document.getElementById('t-dropdown-results').classList.add('hidden');
+    }
+  };
+
   window.handleAgentWithdrawal = async function(e) {
     e.preventDefault();
     await initDB();
 
-    const username = document.getElementById('w-client-username').value;
+    const username = window.selectedWithdrawalUser;
     const amountInput = document.getElementById('w-amount').value;
     const details = document.getElementById('w-details').value.trim();
 
     if (!username || !usersDB[username]) {
-      showToast('Selecciona un cliente válido', 'error');
+      showToast('Selecciona o escribe un cliente válido de la lista', 'error');
       return;
     }
 
@@ -561,13 +626,12 @@ body {
 
     showToast(`¡Retiro procesado! Se descontaron ${amount.toLocaleString('es-PY')} GS`);
     e.target.reset();
+    window.selectedWithdrawalUser = "";
     document.getElementById('client-balance-info').innerText = "Saldo disponible: 0 GS";
-    populateClientSelects();
     renderClients();
     renderAgentHistory();
   };
 
-  // 4. HISTORIAL DE RETIROS
   function renderAgentHistory() {
     const tbody = document.getElementById('table-history-body');
     const cardsContainer = document.getElementById('cards-history-body');
@@ -606,16 +670,21 @@ body {
     `).join('');
   }
 
-  // 5. CARGAR CARTÓN
+  // CARGAR CARTÓN VALIDANDO STOCK DEL AGENTE Y PERTENENCIA DEL CLIENTE
   window.handleAgentAddTickets = async function(e) {
     e.preventDefault();
     await initDB();
 
-    const username = document.getElementById('t-client-username').value;
+    const username = window.selectedTicketUser;
     const qtyInput = document.getElementById('t-quantity').value;
 
     if (!username || !usersDB[username]) {
-      showToast('Selecciona un cliente válido', 'error');
+      showToast('Selecciona o escribe un cliente válido de la lista', 'error');
+      return;
+    }
+
+    if (usersDB[username].createdBy !== currentAgent) {
+      showToast('Este cliente no te pertenece', 'error');
       return;
     }
 
@@ -625,21 +694,53 @@ body {
       return;
     }
 
+    const agentData = usersDB[currentAgent];
+    const currentStock = agentData.tickets || 0;
+
+    if (qty > currentStock) {
+      showToast(`Stock insuficiente. Tienes ${currentStock} cartones disponibles.`, 'error');
+      return;
+    }
+
+    usersDB[currentAgent].tickets -= qty;
     usersDB[username].tickets = (usersDB[username].tickets || 0) + qty;
+    
     await saveToCloud();
 
     showToast(`Se acreditaron ${qty} cartones a ${usersDB[username].name}`);
     e.target.reset();
+    window.selectedTicketUser = "";
+    updateAgentStockDisplay();
     renderClients();
-    populateClientSelects();
   };
 
   window.quickAddTickets = async function(username) {
-    const count = prompt(`Cantidad de cartones a cargar a ${usersDB[username].name}:`, "5");
+    await initDB();
+
+    if (!usersDB[username] || usersDB[username].createdBy !== currentAgent) {
+      showToast('Este cliente no te pertenece', 'error');
+      return;
+    }
+
+    const agentData = usersDB[currentAgent];
+    const currentStock = agentData.tickets || 0;
+
+    const count = prompt(`Cantidad de cartones a cargar a ${usersDB[username].name}\n(Stock disponible: ${currentStock}):`, "5");
+    
     if (count && !isNaN(count) && parseInt(count) > 0) {
-      usersDB[username].tickets = (usersDB[username].tickets || 0) + parseInt(count);
+      const qty = parseInt(count);
+
+      if (qty > currentStock) {
+        showToast(`Stock insuficiente. Solo tienes ${currentStock} cartones disponibles.`, 'error');
+        return;
+      }
+
+      usersDB[currentAgent].tickets -= qty;
+      usersDB[username].tickets = (usersDB[username].tickets || 0) + qty;
+      
       await saveToCloud();
       showToast(`¡Cartones cargados con éxito!`);
+      updateAgentStockDisplay();
       renderClients();
     }
   };
