@@ -109,6 +109,16 @@ body {
   0% { transform: translateX(-100%) rotate(30deg); }
   100% { transform: translateX(100%) rotate(30deg); }
 }
+
+/* Sello flotante centrado profesional */
+@keyframes stampPop {
+  0% { transform: scale(0.6); opacity: 0; }
+  70% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-stamp {
+  animation: stampPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
 </style>
 </head>
 <body class="flex items-center justify-center p-2 min-h-screen">
@@ -121,7 +131,7 @@ body {
     <span id="toast-msg">Mensaje</span>
   </div>
 
-  <!-- VISTA 0: INICIO DE SESIÓN ÚNICO -->
+  <!-- VISTA 0: INICIO DE SESIÓN -->
   <div id="view-auth" class="p-6 flex flex-col gap-5">
     <div class="text-center my-2">
       <h1 class="text-3xl font-black italic gold-gradient-text" id="login-brand-title">RASPA SUERTE</h1>
@@ -133,7 +143,6 @@ body {
       <span>TU RASPADITA MILLONARIO</span>
     </div>
 
-    <!-- FORMULARIO LOGIN -->
     <form id="form-login" onsubmit="handleLogin(event)" class="flex flex-col gap-3">
       <div>
         <label class="block text-[11px] font-bold text-slate-400 mb-1">Usuario</label>
@@ -157,10 +166,8 @@ body {
     </div>
   </div>
 
-  <!-- VISTA 1: DASHBOARD DE USUARIO -->
+  <!-- VISTA 1: DASHBOARD -->
   <div id="view-dashboard" class="hidden p-5 flex-col gap-5">
-    
-    <!-- Encabezado de Usuario -->
     <div class="flex items-center justify-between bg-slate-950/80 p-4 rounded-2xl border border-slate-800">
       <div class="flex items-center gap-3">
         <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-amber-500 to-purple-600 flex items-center justify-center text-white text-xl font-black shadow-lg">
@@ -186,9 +193,7 @@ body {
       </div>
     </div>
 
-    <!-- Tarjetas de Saldo y Cartones -->
     <div class="grid grid-cols-2 gap-3">
-      <!-- Saldo de Ganancias -->
       <div class="bg-gradient-to-br from-amber-950/40 via-slate-900 to-slate-950 p-4 rounded-2xl border border-amber-500/30 flex flex-col justify-between">
         <div class="flex items-center justify-between text-slate-400 text-xs font-bold mb-2">
           <span>GANANCIAS</span>
@@ -200,7 +205,6 @@ body {
         </div>
       </div>
 
-      <!-- Cartones Disponibles -->
       <div class="bg-gradient-to-br from-purple-950/40 via-slate-900 to-slate-950 p-4 rounded-2xl border border-purple-500/30 flex flex-col justify-between">
         <div class="flex items-center justify-between text-slate-400 text-xs font-bold mb-2">
           <span>CARTONES</span>
@@ -213,13 +217,11 @@ body {
       </div>
     </div>
 
-    <!-- Botón Principal: Ir a Jugar -->
     <button onclick="goToGame()" class="w-full py-4 rounded-2xl font-black text-white text-base btn-orange shadow-lg hover:brightness-110 active:scale-[0.98] transition flex items-center justify-center gap-2">
       <i class="fa-solid fa-gamepad text-xl"></i>
       <span>IR A RASPAR CARTÓN</span>
     </button>
 
-    <!-- Historial de Jugadas Recientes -->
     <div class="bg-slate-950/60 rounded-2xl p-4 border border-slate-800">
       <div class="text-xs font-bold text-slate-400 mb-3 flex justify-between items-center">
         <span>HISTORIAL DE JUGADAS</span>
@@ -227,7 +229,6 @@ body {
       </div>
       <div id="history-list" class="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1"></div>
     </div>
-
   </div>
 
   <!-- VISTA 2: JUEGO DE RASPADITA -->
@@ -261,6 +262,26 @@ body {
 
         <div class="scratch-wrapper">
           <div class="game-grid" id="grid"></div>
+
+          <!-- SELLO FLOTANTE 100% CENTRADO -->
+          <div id="game-stamp-overlay" class="absolute inset-0 z-30 flex items-center justify-center pointer-events-none hidden bg-slate-950/40 backdrop-blur-[2px]">
+            <!-- SI PIERDE -->
+            <div id="stamp-lose" class="hidden text-center animate-stamp px-4">
+              <div class="text-5xl mb-1">❌</div>
+              <div class="bg-slate-950/95 text-white font-black text-xl px-6 py-3 rounded-2xl border-2 border-slate-700 shadow-2xl tracking-wider">
+                SIN PREMIO INTENTA OTRA VEZ
+              </div>
+            </div>
+            <!-- SI GANA -->
+            <div id="stamp-win" class="hidden text-center animate-stamp px-4">
+              <div class="text-5xl mb-1">🎉</div>
+              <div class="bg-amber-500 text-slate-950 font-black text-2xl px-6 py-2.5 rounded-2xl border-2 border-yellow-200 shadow-2xl tracking-wider uppercase">
+                ¡FELICIDADES GANASTE🤩!
+              </div>
+              <div id="stamp-win-amount" class="text-emerald-300 font-black text-lg bg-slate-950 px-4 py-1.5 rounded-xl mt-2 shadow-lg border border-amber-400 inline-block"></div>
+            </div>
+          </div>
+
           <canvas id="scratch-canvas"></canvas>
         </div>
 
@@ -273,15 +294,9 @@ body {
         </div>
       </div>
 
-      <div id="result-card" class="w-full bg-slate-900 border border-amber-500/30 rounded-2xl p-4 text-center shadow-lg">
-        <div id="result-status-title" class="text-xl font-black text-amber-100/60 my-1">Raspa el cartón...</div>
-        <div id="result-prize" class="text-3xl font-black text-slate-500 my-1">? ? ? GS</div>
-        <div id="badge-container" class="inline-flex items-center gap-1.5 bg-slate-800 text-slate-300 text-[11px] font-bold px-3.5 py-1.5 rounded-full my-2 border border-slate-700">
-          <i class="fa-solid fa-hourglass-half text-amber-400" id="badge-icon"></i>
-          <span id="payment-status">PENDIENTE DE RASPE</span>
-        </div>
-        
-        <div class="bg-amber-50 text-slate-900 p-3 rounded-xl my-3 flex justify-between items-center shadow-inner">
+      <!-- PANEL INFERIOR -->
+      <div id="result-card" class="w-full bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center shadow-2xl transition-all duration-300">
+        <div class="bg-amber-50 text-slate-900 p-3 rounded-xl mb-3 flex justify-between items-center shadow-inner">
           <div class="text-left">
             <div class="text-[10px] font-black text-slate-500">NÚMERO DE CARTÓN</div>
             <div id="card-big-number" class="text-2xl font-black">4777</div>
@@ -289,19 +304,20 @@ body {
           <div id="card-big-serie" class="text-xs font-black bg-amber-200/80 px-3 py-1.5 rounded-lg border border-amber-300">SERIE A3606</div>
         </div>
         
-        <button onclick="nextCard()" class="w-full py-3.5 rounded-xl font-extrabold text-white btn-orange shadow-md hover:brightness-110 active:scale-[0.98] transition">➡️ Siguiente cartón</button>
+        <button onclick="nextCard()" class="w-full py-3.5 rounded-xl font-extrabold text-white btn-orange shadow-md hover:brightness-110 active:scale-[0.98] transition flex items-center justify-center gap-2">
+          <span>➡️ Siguiente cartón</span>
+        </button>
       </div>
     </div>
   </div>
 
 </div>
 
-<!-- SCRIPT DE FIREBASE MODULAR CON TUS CREDENCIALES EXACTAS -->
+<!-- SCRIPT DE FIREBASE MODULAR -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  // TU CONFIGURACIÓN DE FIREBASE
   const firebaseConfig = {
     apiKey: "AIzaSyDozXJ_MIRZvW9R_V3Q6JPP6P-pFQBzjXo",
     authDomain: "romiraspa.firebaseapp.com",
@@ -655,12 +671,15 @@ body {
   }
 
   function evaluate() {
-    const title = document.getElementById('result-status-title');
-    const prize = document.getElementById('result-prize');
-    const status = document.getElementById('payment-status');
-    
     let winAmount = 0;
     let isWin = false;
+
+    const overlay = document.getElementById('game-stamp-overlay');
+    const stampLose = document.getElementById('stamp-lose');
+    const stampWin = document.getElementById('stamp-win');
+    const stampWinAmount = document.getElementById('stamp-win-amount');
+
+    overlay.classList.remove('hidden');
 
     if (winningItem) {
       isWin = true;
@@ -670,22 +689,19 @@ body {
           document.getElementById(`cell-${i}`).classList.add('matched');
         }
       });
-      title.innerText = '¡GANASTE!';
-      title.className = 'text-3xl font-black text-amber-400 my-1';
-      prize.innerText = winAmount.toLocaleString('es-PY') + ' GS';
-      prize.className = 'text-3xl font-black gold-gradient-text my-1';
-      status.innerText = 'PREMIO ACREDITADO';
       playWinSound();
-      jsConfetti.addConfetti({ emojis: ['🎉', '💰', '🍀'], confettiNumber: 60 });
+      jsConfetti.addConfetti({ emojis: ['🎉', '💰', '🍀', '💎'], confettiNumber: 70 });
 
       usersDB[currentUser].balance = (usersDB[currentUser].balance || 0) + winAmount;
+
+      stampWin.classList.remove('hidden');
+      stampLose.classList.add('hidden');
+      stampWinAmount.innerText = '+' + winAmount.toLocaleString('es-PY') + ' GS';
     } else {
-      title.innerText = 'SUERTE PARA LA PRÓXIMA';
-      title.className = 'text-xl font-bold text-slate-200 my-1';
-      prize.innerText = '0 GS';
-      prize.className = 'text-3xl font-black text-slate-500 my-1';
-      status.innerText = 'SIN PREMIO';
       playLoseSound();
+
+      stampWin.classList.add('hidden');
+      stampLose.classList.remove('hidden');
     }
 
     usersDB[currentUser].tickets = Math.max(0, (usersDB[currentUser].tickets || 0) - 1);
@@ -744,6 +760,10 @@ body {
     isDrawing = false;
     lastPos = null;
     
+    document.getElementById('game-stamp-overlay').classList.add('hidden');
+    document.getElementById('stamp-lose').classList.add('hidden');
+    document.getElementById('stamp-win').classList.add('hidden');
+
     scratchCanvas.style.display = 'block';
     scratchCanvas.style.opacity = '1';
     document.getElementById('scratch-progress').style.width = '0%';
@@ -756,12 +776,6 @@ body {
     document.getElementById('card-big-number').innerText = currentCode;
     document.getElementById('serie-code-top').innerText = 'SERIE ' + currentSerie;
     document.getElementById('card-big-serie').innerText = 'SERIE ' + currentSerie;
-    
-    document.getElementById('result-status-title').innerText = 'Raspa el cartón...';
-    document.getElementById('result-status-title').className = 'text-xl font-black text-amber-100/60 my-1';
-    document.getElementById('result-prize').innerText = '? ? ? GS';
-    document.getElementById('result-prize').className = 'text-3xl font-black text-slate-500 my-1';
-    document.getElementById('payment-status').innerText = 'PENDIENTE DE RASPE';
     
     generateCardData();
     initCanvas();
